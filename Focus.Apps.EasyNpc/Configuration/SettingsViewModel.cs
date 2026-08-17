@@ -1,0 +1,371 @@
+﻿using Focus.Apps.EasyNpc.Build;
+using Focus.Apps.EasyNpc.Messages;
+using Focus.Environment;
+using Focus.ModManagers;
+using Ookii.Dialogs.Wpf;
+using PropertyChanged;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.IO;
+using System.Linq;
+using System.Reactive.Linq;
+using System.Windows;
+
+namespace Focus.Apps.EasyNpc.Configuration
+{
+    [AddINotifyPropertyChangedInterface]
+    public class SettingsViewModel
+    {
+        public event EventHandler? WelcomeAcked;
+
+        public IEnumerable<string> AvailableModNames => modRepository.Select(x => x.Name);
+        public IEnumerable<string> AvailableMugshotModNames { get; private set; } = Enumerable.Empty<string>();
+        public IEnumerable<string> AvailablePlugins { get; private set; } = Enumerable.Empty<string>();
+        public ObservableCollection<BuildWarningSuppressionViewModel> BuildWarningWhitelist { get; init; }
+        public bool HasDefaultModRootDirectory { get; private init; }
+        [DependsOn(nameof(UseModManagerForModDirectory))]
+        public bool HasModManagerModDirectory => !string.IsNullOrEmpty(modManagerConfig.ModsDirectory);
+        [DependsOn(nameof(ModRootDirectory))]
+        public bool IsModDirectorySpecified => !string.IsNullOrEmpty(ModRootDirectory);
+        public bool IsWelcomeScreen { get; set; }
+        [DependsOn(nameof(ModRootDirectory))]
+        public bool ModDirectoryExists => IsModDirectorySpecified && Directory.Exists(ModRootDirectory);
+        public string ModManagerModDirectory => modManagerConfig.ModsDirectory;
+        public ObservableCollection<MugshotRedirectViewModel> MugshotRedirects { get; init; }
+        public string MugshotsDirectoryPlaceholderText => ProgramData.DefaultMugshotsPath;
+
+        public string ModRootDirectory
+        {
+            get => settings.DefaultModRootDirectory;
+            set
+            {
+                settings.DefaultModRootDirectory = value;
+                settings.Save();
+                messageBus.Send(new SettingsChanged(SettingsChanged.SettingKind.DefaultModDirectory));
+            }
+        }
+
+        public bool EnableOnlineMugshots
+        {
+            get => settings.EnableOnlineMugshots;
+            set
+            {
+                settings.EnableOnlineMugshots = value;
+                settings.Save();
+            }
+        }
+
+        public bool IncludeChildNpcs
+        {
+            get => settings.IncludeChildNpcs;
+            set
+            {
+                settings.IncludeChildNpcs = value;
+                settings.Save();
+            }
+        }
+
+        // Bound to the theme radio buttons via IsThemeSystem/Light/Dark. Applying the theme live is done by App, which
+        // watches ThemeObservable.
+        public string Theme
+        {
+            get => settings.Theme;
+            set
+            {
+                if (settings.Theme == value)
+                    return;
+                settings.Theme = value;
+                settings.Save();
+            }
+        }
+
+        [DependsOn(nameof(Theme))]
+        public bool IsThemeSystem
+        {
+            get => Theme == "System";
+            set { if (value) Theme = "System"; }
+        }
+
+        [DependsOn(nameof(Theme))]
+        public bool IsThemeLight
+        {
+            get => Theme == "Light";
+            set { if (value) Theme = "Light"; }
+        }
+
+        [DependsOn(nameof(Theme))]
+        public bool IsThemeDark
+        {
+            get => Theme == "Dark";
+            set { if (value) Theme = "Dark"; }
+        }
+
+        public string MugshotsDirectory
+        {
+            get => settings.MugshotsDirectory;
+            set
+            {
+                settings.MugshotsDirectory = value;
+                settings.Save();
+                messageBus.Send(new SettingsChanged(SettingsChanged.SettingKind.MugshotDirectory));
+            }
+        }
+
+        public bool UseModManagerForModDirectory
+        {
+            get => settings.UseModManagerForModDirectory;
+            set
+            {
+                settings.UseModManagerForModDirectory = value;
+                settings.Save();
+                messageBus.Send(new SettingsChanged(SettingsChanged.SettingKind.ModDirectorySource));
+            }
+        }
+
+        private readonly IMessageBus messageBus;
+        private readonly IModManagerConfiguration modManagerConfig;
+        private readonly IModRepository modRepository;
+        private readonly IMutableAppSettings settings;
+        private readonly Profiles.FaceFinder.FaceFinderMugshotRepository faceFinderCache;
+
+        public SettingsViewModel(
+            IMutableAppSettings settings, IModManagerConfiguration modManagerConfig, IModRepository modRepository,
+            IAfterGameSetup<IGameSettings> gameSettingsFuture, IMessageBus messageBus,
+            Profiles.FaceFinder.FaceFinderMugshotRepository faceFinderCache)
+        {
+            this.messageBus = messageBus;
+            this.modManagerConfig = modManagerConfig;
+            this.modRepository = modRepository;
+            this.settings = settings;
+            this.faceFinderCache = faceFinderCache;
+
+            HasDefaultModRootDirectory = !string.IsNullOrEmpty(ModRootDirectory);
+            UpdateFaceFinderCacheStatus();
+
+            // Since these are pass-through properties, we need to force an initial update.
+            OnMugshotsDirectoryChanged();
+
+            var buildWarningSuppressions = settings.BuildWarningWhitelist
+                .Select(x => new BuildWarningSuppressionViewModel(x.PluginName, x.IgnoredWarnings));
+            BuildWarningWhitelist = new(buildWarningSuppressions);
+            WatchCollection(BuildWarningWhitelist, SaveBuildWarningSuppressions);
+
+            var mugshotRedirects = settings.MugshotRedirects
+                .Select(x => new MugshotRedirectViewModel(x.ModName, x.Mugshots));
+            MugshotRedirects = new(mugshotRedirects);
+            WatchCollection(MugshotRedirects, SaveMugshotRedirects);
+
+            gameSettingsFuture.OnValue(gameSettings =>
+            {
+                AvailablePlugins = gameSettings.PluginLoadOrder.OrderBy(p => p).ToList().AsReadOnly();
+            });
+        }
+
+        public void AckWelcome()
+        {
+            settings.Save();
+            IsWelcomeScreen = false;
+            WelcomeAcked?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void AddBuildWarningSuppression()
+        {
+            BuildWarningWhitelist.Add(new(AvailablePlugins.FirstOrDefault()));
+        }
+
+        // Online mugshots (NPC Face Finder) are cached on disk so revisiting an NPC is instant. This lets the user wipe
+        // that cache (they re-download on demand), e.g. to reclaim space or force a refresh.
+        public string FaceFinderCacheStatus { get; private set; } = string.Empty;
+
+        public void ClearFaceFinderCache()
+        {
+            faceFinderCache.ClearCache();
+            UpdateFaceFinderCacheStatus();
+        }
+
+        private void UpdateFaceFinderCacheStatus()
+        {
+            var bytes = faceFinderCache.GetCacheSizeBytes();
+            FaceFinderCacheStatus = bytes <= 0
+                ? "Cache is empty."
+                : $"Cached online mugshots: {FormatSize(bytes)}.";
+        }
+
+        private static string FormatSize(long bytes)
+        {
+            if (bytes >= 1024 * 1024)
+                return $"{bytes / (1024.0 * 1024.0):0.0} MB";
+            if (bytes >= 1024)
+                return $"{bytes / 1024.0:0} KB";
+            return $"{bytes} B";
+        }
+
+        public void AddMugshotRedirect()
+        {
+            MugshotRedirects.Add(new("", ""));
+        }
+
+        public void RemoveBuildWarningSuppression(BuildWarningSuppressionViewModel suppressions)
+        {
+            BuildWarningWhitelist.Remove(suppressions);
+        }
+
+        public void RemoveMugshotRedirect(MugshotRedirectViewModel redirect)
+        {
+            MugshotRedirects.Remove(redirect);
+        }
+
+        public void SelectModRootDirectory(Window owner)
+        {
+            const string description = "Select root directory where your individual mod directories are located";
+            if (SelectDirectory(owner, description, out string modRootDirectory))
+                ModRootDirectory = modRootDirectory;
+
+        }
+
+        public void SelectMugshotsDirectory(Window owner)
+        {
+            const string description = "Select directory containing face previews";
+            if (SelectDirectory(owner, description, out string mugshotsDirectory))
+                MugshotsDirectory = mugshotsDirectory;
+        }
+
+        protected void OnMugshotsDirectoryChanged()
+        {
+            AvailableMugshotModNames = Directory.Exists(MugshotsDirectory) ?
+                Directory.GetDirectories(MugshotsDirectory)
+                    .Select(f => Path.GetRelativePath(MugshotsDirectory, f))
+                    .ToArray() :
+                Enumerable.Empty<string>();
+        }
+
+        private void SaveBuildWarningSuppressions()
+        {
+            settings.BuildWarningWhitelist = BuildWarningWhitelist
+                .Select(x => new BuildWarningSuppression(x.PluginName, x.SelectedWarnings))
+                .ToList();
+            settings.Save();
+            messageBus.Send(new SettingsChanged(SettingsChanged.SettingKind.BuildWarnings));
+        }
+
+        private void SaveMugshotRedirects()
+        {
+            settings.MugshotRedirects = MugshotRedirects
+                .Select(x => new MugshotRedirect(x.ModName, x.Mugshots))
+                .ToList();
+            settings.Save();
+            messageBus.Send(new SettingsChanged(SettingsChanged.SettingKind.MugshotSynonyms));
+        }
+
+        private bool SelectDirectory(Window owner, string description, out string selectedPath)
+        {
+            var dialog = new VistaFolderBrowserDialog();
+            dialog.Description = description;
+            dialog.UseDescriptionForTitle = true;
+            bool result = dialog.ShowDialog(owner).GetValueOrDefault();
+            if (result)
+                selectedPath = dialog.SelectedPath;
+            else
+                selectedPath = string.Empty;
+            return result;
+        }
+
+        private void WatchCollection<T>(ObservableCollection<T> collection, Action onChange)
+            where T : INotifyPropertyChanged
+        {
+            PropertyChangedEventHandler propertyChangeHandler = (_, _) => onChange();
+            collection.CollectionChanged += (_, e) =>
+            {
+                UpdateWatchedItems(e, propertyChangeHandler);
+                onChange();
+            };
+            foreach (var entry in collection)
+                entry.PropertyChanged += propertyChangeHandler;
+        }
+
+        private void UpdateWatchedItems(NotifyCollectionChangedEventArgs e, PropertyChangedEventHandler handler)
+        {
+            if (e.OldItems != null)
+                foreach (var item in e.OldItems.Cast<INotifyPropertyChanged>())
+                    item.PropertyChanged -= handler;
+            if (e.NewItems != null)
+                foreach (var item in e.NewItems.Cast<INotifyPropertyChanged>())
+                    item.PropertyChanged += handler;
+        }
+    }
+
+    public record BuildWarningSelection(BuildWarningId Id, bool IsSelected) : INotifyPropertyChanged
+    {
+#pragma warning disable 67 // Implemented by PropertyChanged.Fody
+        public event PropertyChangedEventHandler? PropertyChanged;
+#pragma warning restore 67
+    }
+
+    public class BuildWarningSuppressionViewModel : INotifyPropertyChanged
+    {
+#pragma warning disable 67 // Implemented by PropertyChanged.Fody
+        public event PropertyChangedEventHandler? PropertyChanged;
+#pragma warning restore 67
+
+        public static IEnumerable<BuildWarningId> ParseWarnings(string serializedWarnings)
+        {
+            return serializedWarnings
+                .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(s => (BuildWarningId)int.Parse(s))
+                .ToList()
+                .AsReadOnly();
+        }
+
+        public static string SerializeWarnings(IEnumerable<BuildWarningId> warnings)
+        {
+            return string.Join(',', warnings.Select(id => (int)id));
+        }
+
+        public string PluginName { get; set; }
+        public IEnumerable<BuildWarningId> SelectedWarnings { get; private set; } = Enumerable.Empty<BuildWarningId>();
+        public IReadOnlyList<BuildWarningSelection> WarningSelections { get; init; }
+
+        public BuildWarningSuppressionViewModel(string? pluginName, IEnumerable<BuildWarningId>? warnings = null)
+        {
+            PluginName = pluginName ?? string.Empty;
+            WarningSelections = Enum.GetValues<BuildWarningId>()
+                .Where(x => x != BuildWarningId.Unknown)
+                .Select(id => new BuildWarningSelection(id, warnings?.Contains(id) ?? false))
+                .ToList()
+                .AsReadOnly();
+            foreach (var selection in WarningSelections)
+                selection.PropertyChanged += (sender, e) => UpdateSelectedWarnings();
+            UpdateSelectedWarnings();
+        }
+
+        public string SerializeWarnings()
+        {
+            return SerializeWarnings(SelectedWarnings);
+        }
+
+        private void UpdateSelectedWarnings()
+        {
+            // This could easily be a computed property - but that doesn't play nice with WPF and Fody.PropertyChanged.
+            SelectedWarnings = WarningSelections.Where(x => x.IsSelected).Select(x => x.Id);
+        }
+    }
+
+    public class MugshotRedirectViewModel : INotifyPropertyChanged
+    {
+#pragma warning disable 67 // Implemented by PropertyChanged.Fody
+        public event PropertyChangedEventHandler? PropertyChanged;
+#pragma warning restore 67
+
+        public string ModName { get; set; }
+        public string Mugshots { get; set; }
+
+        public MugshotRedirectViewModel(string modName, string mugshots)
+        {
+            ModName = modName;
+            Mugshots = mugshots;
+        }
+    }
+}

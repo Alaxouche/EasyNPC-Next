@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <RootNamespace>Focus.Apps.EasyNpc.Verify</RootNamespace>
+    <UseWPF>true</UseWPF>
+    <Nullable>enable</Nullable>
+    <AssemblyName>EasyNPC-Verify</AssemblyName>
+    <AssemblyTitle>EasyNPC Next Verify</AssemblyTitle>
+    <Product>EasyNPC Next</Product>
+    <Version>1.0.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
+    <ApplicationIcon>EasyNPC-Verify.ico</ApplicationIcon>
+    <NoWarn>MSB3246</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Autofac" Version="6.2.0" />
+    <PackageReference Include="CommandLineParser" Version="2.8.0" />
+    <PackageReference Include="FontAwesome5" Version="2.1.1" />
+    <PackageReference Include="MathConverter" Version="1.2.1.6">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
+    <PackageReference Include="ModernWpfUI" Version="0.9.6" />
+    <PackageReference Include="Serilog" Version="2.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Focus.Apps.EasyNpc\Focus.Apps.EasyNpc.csproj" />
+  </ItemGroup>
+
+  <!-- GPL v3: this app ships separately, so it carries its own license, modification notice and changelog. -->
+  <ItemGroup>
+    <Content Include="..\Focus.Apps.EasyNpc\LICENSE.txt" Link="LICENSE.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="..\Focus.Apps.EasyNpc\CHANGELOG.md" Link="CHANGELOG.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="README-EasyNPC-Verify.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

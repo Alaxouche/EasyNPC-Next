@@ -1,0 +1,121 @@
+﻿<Application x:Class="Focus.Apps.EasyNpc.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:build="clr-namespace:Focus.Apps.EasyNpc.Build"
+             xmlns:config="clr-namespace:Focus.Apps.EasyNpc.Configuration"
+             xmlns:debug="clr-namespace:Focus.Apps.EasyNpc.Debug"
+             xmlns:fa="http://schemas.fontawesome.com/icons/"
+             xmlns:local="clr-namespace:Focus.Apps.EasyNpc"
+             xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
+             xmlns:math="http://hexinnovation.com/math"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:ui="http://schemas.modernwpf.com/2019"
+             ShutdownMode="OnExplicitShutdown"
+             Startup="Application_Startup">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ui:ThemeResources>
+                    <ui:ThemeResources.ThemeDictionaries>
+                        <ResourceDictionary x:Key="Light">
+                            <ResourceDictionary.MergedDictionaries>
+                                <ResourceDictionary Source="Theme/Colors.Light.xaml"/>
+                            </ResourceDictionary.MergedDictionaries>
+                        </ResourceDictionary>
+                        <ResourceDictionary x:Key="Dark">
+                            <ResourceDictionary.MergedDictionaries>
+                                <ResourceDictionary Source="Theme/Colors.Dark.xaml"/>
+                            </ResourceDictionary.MergedDictionaries>
+                        </ResourceDictionary>
+                    </ui:ThemeResources.ThemeDictionaries>
+                </ui:ThemeResources>
+                <ResourceDictionary Source="Theme/Theme.xaml"/>
+                <ui:XamlControlsResources />
+            </ResourceDictionary.MergedDictionaries>
+
+            <x:Static x:Key="AppName" Member="config:AssemblyProperties.Name"/>
+            <x:Static x:Key="AppProduct" Member="config:AssemblyProperties.Product"/>
+            <x:Static x:Key="AppTitle" Member="config:AssemblyProperties.Title"/>
+            <x:Static x:Key="AppVersion" Member="config:AssemblyProperties.Version"/>
+            <x:Static x:Key="LaunchedByModOrganizer" Member="main:StartupInfo.IsLaunchedByModOrganizer"/>
+            <x:Static x:Key="LaunchedByUnknown" Member="main:StartupInfo.IsLaunchedByUnknown"/>
+            <x:Static x:Key="LaunchedByVortex" Member="main:StartupInfo.IsLaunchedByVortex"/>
+            <x:Static x:Key="LaunchedStandalone" Member="main:StartupInfo.IsLaunchedStandalone"/>
+            <x:Static x:Key="LaunchedStandaloneOrUnknown" Member="main:StartupInfo.IsLaunchedStandaloneOrUnknown"/>
+
+            <local:InverseBooleanToVisibilityConverter x:Key="InvBoolToVisibility"/>
+            <BooleanToVisibilityConverter x:Key="BoolToVisibility"/>
+            <local:InverseBooleanConverter x:Key="InverseBoolean"/>
+            <local:EqualsConverter x:Key="Equals"/>
+            <local:InvertedEqualsConverter x:Key="NotEqual"/>
+            <local:EqualsVisibilityConverter x:Key="VisibleWhen"/>
+            <local:InvertedEqualsVisibilityConverter x:Key="HiddenWhen"/>
+            <local:MultiBooleanConverter x:Key="BooleanAnd" Operator="And"/>
+            <local:MultiBooleanConverter x:Key="BooleanOr" Operator="Or"/>
+            <local:MultiSequenceConverter x:Key="ConcatSequences"/>
+            <local:DocUrlConverter x:Key="DocUrl" BaseUrl="https://github.com/focustense/easymod/blob/master/Focus.Apps.EasyNpc/Docs/"/>
+            <math:MathConverter x:Key="Math" />
+            <build:BuildWarningIdsToTextConverter x:Key="FormatBuildWarningIds"/>
+
+            <Style TargetType="Button" x:Key="DangerButtonStyle" BasedOn="{StaticResource DefaultButtonStyle}">
+                <Setter Property="Background" Value="{StaticResource DangerBackgroundBrush}"/>
+                <Setter Property="Foreground" Value="White"/>
+            </Style>
+
+            <Style TargetType="DataGrid" BasedOn="{StaticResource DefaultDataGridStyle}">
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource SystemControlForegroundBaseLowBrush}"/>
+            </Style>
+            <Style TargetType="DataGridRow" x:Key="DataGridRowStyle" BasedOn="{StaticResource DefaultDataGridRowStyle}"/>
+            <Style TargetType="DataGridCell" x:Key="DataGridCellTrimmed" BasedOn="{StaticResource DefaultDataGridCellStyle}">
+                <Setter Property="TextBlock.TextTrimming" Value="WordEllipsis"/>
+            </Style>
+
+            <Style TargetType="TextBlock" x:Key="FormLabelStyle" BasedOn="{StaticResource BodyTextBlockStyle}">
+                <Setter Property="Margin" Value="0,8,0,4"/>
+            </Style>
+            <Style TargetType="TextBlock" x:Key="ParagraphStyle" BasedOn="{StaticResource BodyTextBlockStyle}">
+                <Setter Property="Margin" Value="0,8"/>
+            </Style>
+            <Style TargetType="TextBlock" x:Key="FirstParagraphStyle" BasedOn="{StaticResource ParagraphStyle}">
+                <Setter Property="Margin" Value="0,0,0,8"/>
+            </Style>
+            <Style TargetType="TextBlock" x:Key="LastParagraphStyle" BasedOn="{StaticResource BodyTextBlockStyle}">
+                <Setter Property="Margin" Value="0,8,0,0"/>
+            </Style>
+            <Style TargetType="TextBlock" x:Key="SmallHeaderStyle" BasedOn="{StaticResource SubtitleTextBlockStyle}">
+                <Setter Property="FontSize" Value="16"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+            </Style>
+
+            <Style TargetType="TextBox" x:Key="MiniSearchBoxStyle" BasedOn="{StaticResource DefaultTextBoxStyle}">
+                <Setter Property="BorderBrush" Value="CornflowerBlue"/>
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="Foreground" Value="CornflowerBlue"/>
+                <Setter Property="MinHeight" Value="0"/>
+                <Setter Property="Margin" Value="0,2,0,4"/>
+                <Setter Property="Padding" Value="3"/>
+                <Style.Triggers>
+                    <Trigger Property="Text" Value="">
+                        <Setter Property="BorderBrush" Value="{StaticResource SystemControlBackgroundBaseMediumLowRevealBorderBrush}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style TargetType="Run" x:Key="CodeStyle">
+                <Setter Property="FontFamily" Value="Courier New"/>
+            </Style>
+
+            <Style TargetType="debug:ScrollingTextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="Padding" Value="2,0"/>
+            </Style>
+
+            <Style TargetType="fa:SvgAwesome">
+                <Setter Property="Foreground" Value="{StaticResource SystemControlForegroundBaseMediumHighBrush}"/>
+            </Style>
+
+            <!-- This is not supposed to be any different from AccentButtonStyle, but is easier for WPF to "find". -->
+            <Style TargetType="Button" x:Key="LocalAccentButtonStyle" BasedOn="{StaticResource AccentButtonStyle}"/>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>

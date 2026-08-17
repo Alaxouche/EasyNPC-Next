@@ -1,0 +1,26 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows10.0.19041</TargetFramework>
+    <Nullable>enable</Nullable>
+    <WarningsAsErrors>nullable</WarningsAsErrors>
+    <AssemblyTitle>Integration library for Mod Organizer</AssemblyTitle>
+    <Product>EasyMod</Product>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ini-parser" Version="2.5.2">
+      <NoWarn>NU1701</NoWarn>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
+    <PackageReference Include="System.IO.Abstractions" Version="22.0.16" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Focus.Abstractions.Windows\Focus.Abstractions.Windows.csproj" />
+    <ProjectReference Include="..\Focus.Files\Focus.Files.csproj" />
+    <ProjectReference Include="..\Focus.ModManagers\Focus.ModManagers.csproj" />
+  </ItemGroup>
+
+</Project>

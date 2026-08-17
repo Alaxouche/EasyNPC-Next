@@ -1,0 +1,87 @@
+﻿using System.Windows;
+
+namespace Focus.Apps.EasyNpc.Configuration
+{
+    /// <summary>
+    /// Interaction logic for SettingsPage.xaml
+    /// </summary>
+    public partial class SettingsPage : ModernWpf.Controls.Page
+    {
+        protected SettingsViewModel Model => ((ISettingsContainer)DataContext).Settings;
+
+        public SettingsPage()
+        {
+            InitializeComponent();
+        }
+
+        private void AddBuildWarningSuppressionButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.AddBuildWarningSuppression();
+        }
+
+        private void ClearFaceFinderCache_Click(object sender, RoutedEventArgs e)
+        {
+            Model.ClearFaceFinderCache();
+        }
+
+        private void Hyperlink_RequestNavigate(object sender, System.Windows.Navigation.RequestNavigateEventArgs e)
+        {
+            try
+            {
+                System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(e.Uri.AbsoluteUri)
+                {
+                    UseShellExecute = true,
+                });
+            }
+            catch
+            {
+                // No browser or a blocked URL: nothing we can do, and not worth interrupting the user.
+            }
+            e.Handled = true;
+        }
+
+        private void AddMugshotRedirectButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.AddMugshotRedirect();
+        }
+
+        private void BuildWarningsComboBox_DropDownClosed(object sender, System.EventArgs e)
+        {
+            // WPF's ComboBox makes a goddamn mess of the UI if any user is unlucky enough to click outside of the
+            // checkbox - i.e. within the ComboBoxItem's padding - and there's no other way to pad around the checkbox
+            // itself. One lame but somewhat effective workaround is just to force the grid out of editing mode when
+            // this happens, which makes the ComboBox disappear entirely and get replaced by the regular text which
+            // renders fine.
+            BuildWarningWhitelistGrid.CancelEdit();
+        }
+
+        private void ModRootDirSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.SelectModRootDirectory(Window.GetWindow(this));
+        }
+
+        private void MugshotsDirSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.SelectMugshotsDirectory(Window.GetWindow(this));
+        }
+
+        private void RemoveWarningSuppressionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var suppressions = (sender as FrameworkElement)?.DataContext as BuildWarningSuppressionViewModel;
+            if (suppressions is not null)
+                Model.RemoveBuildWarningSuppression(suppressions);
+        }
+
+        private void RemoveMugshotRedirectButton_Click(object sender, RoutedEventArgs e)
+        {
+            var redirect = (sender as FrameworkElement)?.DataContext as MugshotRedirectViewModel;
+            if (redirect is not null)
+                Model.RemoveMugshotRedirect(redirect);
+        }
+
+        private void WelcomeDoneButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.AckWelcome();
+        }
+    }
+}

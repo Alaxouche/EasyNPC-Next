@@ -1,0 +1,311 @@
+﻿<ui:Page x:Class="Focus.Apps.EasyNpc.Configuration.SettingsPage"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:fa5="http://schemas.fontawesome.com/icons/"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+         xmlns:local="clr-namespace:Focus.Apps.EasyNpc"
+         xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
+         xmlns:ui="http://schemas.modernwpf.com/2019"
+         mc:Ignorable="d" 
+         d:DataContext="{d:DesignInstance Type=main:MainViewModel}"
+         d:DesignHeight="450" d:DesignWidth="800">
+    <Page.Resources>
+        <Style TargetType="Expander" BasedOn="{StaticResource DefaultExpanderStyle}">
+            <Setter Property="Foreground" Value="SteelBlue"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Page.Resources>
+    <Grid DataContext="{Binding Path=Settings}">
+        <Grid.Resources>
+            <CollectionViewSource x:Key="AvailableModNames" Source="{Binding AvailableModNames}"/>
+            <CollectionViewSource x:Key="AvailableMugshotModNames" Source="{Binding AvailableMugshotModNames}"/>
+        </Grid.Resources>
+        <ui:ScrollViewerEx>
+            <!-- We have to add padding on the right here, otherwise the scroll bar masks part of the buttons (even when hidden). -->
+            <ui:SimpleStackPanel Margin="0,0,16,0">
+                <Border Background="{StaticResource WelcomeBackgroundBrush}" Padding="8" Margin="0,8,0,16" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource BoolToVisibility}}" d:Visibility="Collapsed">
+                    <ui:SimpleStackPanel>
+                        <TextBlock Style="{StaticResource TitleTextBlockStyle}">Welcome!</TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}">
+                            Looks like this is your first time running <Run Text="{StaticResource AppTitle}"/>. A starting profile will be generated based on your load order, but first you'll
+                            need to confirm where your mods are located, so that we know which ones are actually installed.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Visibility="{Binding HasDefaultModRootDirectory, Converter={StaticResource BoolToVisibility}}">
+                            We've chosen a default directory based on the mod manager you appear to be running. If this is correct, you don't need to do anything else; just click "I'm Done".
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Visibility="{Binding HasDefaultModRootDirectory, Converter={StaticResource InvBoolToVisibility}}">
+                            We couldn't figure this out automatically, because we couldn't detect which mod manager you're using. This is usually because <Run Text="{StaticResource AppTitle}"/> was started from
+                            Windows Explorer instead of starting it from the mod manager. To fix this, you can either close <Run Text="{StaticResource AppTitle}"/> now and restart it from inside your mod manager,
+                            or manually specify the directory below. If you use Mod Organizer, this is normally the "mods" folder inside your Mod Organizer installation folder, and if you use Vortex, it is the game's
+                            "Mod Staging Folder".
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Visibility="{Binding HasDefaultModRootDirectory, Converter={StaticResource InvBoolToVisibility}}">
+                            <Run FontWeight="Bold">Do not</Run> point this at your Skyrim data directory. If you're confused, click on the "What's this?" link further down.
+                            Legacy mod managers that do not use a mod directory, such as Nexus Mod Manager, are <Run FontStyle="Italic">not supported</Run>.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}">
+                            If you haven't already, you should also browse the
+                            <Hyperlink local:HyperlinkExtensions.DefaultNavigation="True" NavigateUri="{Binding Source='getting-started', Converter={StaticResource DocUrl}}">Getting Started</Hyperlink>
+                            section of the how-to guide for how to set up your load order for first-time use. In general: Put your NPC overhauls last, order them from least to most favorite, and disable any compatibility
+                            patches or AIOs for them. For more details, see the guide.
+                        </TextBlock>
+                    </ui:SimpleStackPanel>
+                </Border>
+                <GroupBox Header="Paths">
+                    <ui:SimpleStackPanel>
+                        <TextBlock Style="{StaticResource FormLabelStyle}">
+                            Mod Root Directory
+                            <TextBlock Visibility="{Binding UseModManagerForModDirectory, Converter={StaticResource BoolToVisibility}}">(Default)</TextBlock>
+                        </TextBlock>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="48"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding ModRootDirectory}" Grid.Column="0"/>
+                            <Button x:Name="ModRootDirSelectButton" Margin="8,0,0,0" Grid.Column="1" Click="ModRootDirSelectButton_Click">
+                                <fa5:SvgAwesome Icon="Regular_FolderOpen"/>
+                            </Button>
+                        </Grid>
+                        <Expander Header="What's this?">
+                            <TextBlock Background="{StaticResource ExpandoBackgroundBrush}" Foreground="{StaticResource MutedTextBrush}" Cursor="Arrow" Padding="4" TextWrapping="Wrap">
+                                Bethesda games look at two sources for face geometry: face data in plugins (ESPs) and pre-generated facegen meshes (NIFs).
+                                If these two don't match in-game for any given actor, the result is the dreaded "black face", "gray face" or "dark face" bug.
+                                <LineBreak/><LineBreak/>
+                                Specifying your mod directory (e.g. C:\Program Files\Mod Organizer\mods) enables this program to find the face meshes associated
+                                with the plugins and overrides you select and prevent blackface issues. It also allows you to create a merged NPC BSA, which is
+                                highly recommended if you're modifying hundreds of NPCs with high-poly faces.
+                                <LineBreak/><LineBreak/>
+                                If you don't use a supported mod manager such as Mod Organizer or Vortex, you may still be able to use this feature by extracting
+                                all your NPC mods to a single directory that lives <Italic>outside</Italic> your SSE data directory - just extract each mod to its
+                                own folder. This workflow is not officially supported, but may work for some scenarios.
+                                <LineBreak/><LineBreak/>
+                                <Bold>Do not use your Skyrim data directory here.</Bold> It won't work, and could cause bad side effects that break your game.
+                            </TextBlock>
+                        </Expander>
+                        <ui:SimpleStackPanel Orientation="Horizontal">
+                            <CheckBox IsChecked="{Binding UseModManagerForModDirectory}" Margin="8,0,0,0">
+                                Use mod directory setting from mod manager when available
+                            </CheckBox>
+                            <ContentControl Style="{StaticResource HelpIconStyle}" Margin="4,0,0,0">
+                                <ContentControl.ToolTip>
+                                    <ui:SimpleStackPanel>
+                                        <TextBlock Margin="0,0,0,8" TextWrapping="Wrap">
+                                            When enabled (default), and <Run Text="{StaticResource AppName}"/> is launched from a mod manager such as Mod Organizer or Vortex,
+                                            the setting from the mod manager will be used instead of the <Run FontStyle="Italic">Mod Root Directory</Run> specified above.
+                                        </TextBlock>
+                                        <TextBlock Visibility="{Binding HasModManagerModDirectory, Converter={StaticResource BoolToVisibility}}" TextWrapping="Wrap">
+                                            The directory for this session is:<LineBreak/>
+                                            <Run FontWeight="SemiBold" Text="{Binding ModManagerModDirectory, Mode=OneWay}"/>
+                                        </TextBlock>
+                                        <TextBlock Visibility="{Binding HasModManagerModDirectory, Converter={StaticResource InvBoolToVisibility}}" TextWrapping="Wrap">
+                                            No mod manager detected for this session. The <Run FontStyle="Italic">Mod Root Directory</Run> specified above will be used.
+                                        </TextBlock>
+                                    </ui:SimpleStackPanel>
+                                </ContentControl.ToolTip>
+                            </ContentControl>
+                        </ui:SimpleStackPanel>
+
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Text="Face Preview Directory"/>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="48"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox x:Name="MugshotsDirectoryTextBox" Text="{Binding MugshotsDirectory}" Grid.Column="0"/>
+                            <TextBox Background="Transparent" IsHitTestVisible="False" IsEnabled="False" Text="{Binding MugshotsDirectoryPlaceholderText, Mode=OneWay}" Grid.Column="0">
+                                <TextBox.Style>
+                                    <Style TargetType="TextBox" BasedOn="{StaticResource DefaultTextBoxStyle}">
+                                        <Setter Property="Visibility" Value="Collapsed"/>
+                                        <Style.Triggers>
+                                            <MultiDataTrigger>
+                                                <MultiDataTrigger.Conditions>
+                                                    <Condition Binding="{Binding IsFocused, ElementName=MugshotsDirectoryTextBox}" Value="false"/>
+                                                    <Condition Binding="{Binding Text, ElementName=MugshotsDirectoryTextBox}" Value=""/>
+                                                </MultiDataTrigger.Conditions>
+                                                <MultiDataTrigger.Setters>
+                                                    <Setter Property="Visibility" Value="Visible"/>
+                                                </MultiDataTrigger.Setters>
+                                            </MultiDataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBox.Style>
+                            </TextBox>
+                            <Button x:Name="MugshotsDirSelectButton" Margin="8,0,0,0" Grid.Column="1" Click="MugshotsDirSelectButton_Click">
+                                <fa5:SvgAwesome Icon="Regular_FolderOpen"/>
+                            </Button>
+                        </Grid>
+                        <ui:SimpleStackPanel Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                            <TextBlock Style="{StaticResource FormLabelStyle}">
+                                Face Preview Synonyms
+                                <ContentControl Style="{StaticResource HelpIconStyle}" Margin="4,0,0,0">
+                                    <ContentControl.ToolTip>
+                                        <TextBlock>
+                                            If you have multiple variants of the same NPC overhaul, or have renamed mods from their default installations, or are using smaller mods
+                                            that were later combined into an all-in-one (such as Pride of Skyrim), use this setting to point them all to the same previews.
+                                        </TextBlock>
+                                    </ContentControl.ToolTip>
+                                </ContentControl>
+                            </TextBlock>
+                            <DataGrid x:Name="MugshotRedirectGrid" AutoGenerateColumns="False" ItemsSource="{Binding MugshotRedirects}">
+                                <DataGrid.Columns>
+                                    <local:DataGridComboBoxColumn Header="Mod Name"
+                                                                  ItemsSource="{Binding Source={StaticResource AvailableModNames}}"
+                                                                  Binding="{Binding ModName, UpdateSourceTrigger=LostFocus}"
+                                                                  Width="*"/>
+                                    <local:DataGridComboBoxColumn Header="Use Previews For"
+                                                                  ItemsSource="{Binding Source={StaticResource AvailableMugshotModNames}}"
+                                                                  Binding="{Binding Mugshots, UpdateSourceTrigger=LostFocus}"
+                                                                  Width="*"/>
+                                    <DataGridTemplateColumn IsReadOnly="True" MinWidth="36" MaxWidth="36">
+                                        <DataGridTemplateColumn.CellTemplate>
+                                            <DataTemplate>
+                                                <Button x:Name="RemoveMugshotRedirectButton" HorizontalAlignment="Stretch" ToolTip="Remove this synonym" Click="RemoveMugshotRedirectButton_Click">
+                                                    <fa5:SvgAwesome Icon="Regular_TrashAlt" Foreground="{StaticResource DangerForegroundBrush}" Width="16" Height="16"/>
+                                                </Button>
+                                            </DataTemplate>
+                                        </DataGridTemplateColumn.CellTemplate>
+                                    </DataGridTemplateColumn>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                            <Button x:Name="AddMugshotRedirectButton" HorizontalAlignment="Right" ToolTip="Add another synonym" Click="AddMugshotRedirectButton_Click">
+                                <fa5:SvgAwesome Icon="Solid_Plus" Width="16" Height="16" HorizontalAlignment="Center"/>
+                            </Button>
+                        </ui:SimpleStackPanel>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+                <GroupBox Header="Build Settings" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                    <ui:SimpleStackPanel>
+                        <TextBlock Style="{StaticResource FormLabelStyle}" Margin="0,0,0,8" Text="Ignore Warnings"/>
+                        <DataGrid x:Name="BuildWarningWhitelistGrid" AutoGenerateColumns="False" ItemsSource="{Binding BuildWarningWhitelist}">
+                            <DataGrid.Resources>
+                                <CollectionViewSource x:Key="AvailablePlugins" Source="{Binding AvailablePlugins}"/>
+                            </DataGrid.Resources>
+                            <DataGrid.Columns>
+                                <local:DataGridComboBoxColumn Header="Plugin Name"
+                                                              ItemsSource="{Binding Source={StaticResource AvailablePlugins}}"
+                                                              Binding="{Binding PluginName, UpdateSourceTrigger=LostFocus}"
+                                                              Width="250"/>
+                                <DataGridTemplateColumn Header="Warnings to Ignore" Width="*">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding SelectedWarnings, Converter={StaticResource FormatBuildWarningIds}}" Style="{StaticResource DataGridTextBlockStyle}"/>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                    <DataGridTemplateColumn.CellEditingTemplate>
+                                        <DataTemplate>
+                                            <Grid>
+                                                <ComboBox ItemsSource="{Binding WarningSelections}" HorizontalAlignment="Stretch" IsDropDownOpen="True" DropDownClosed="BuildWarningsComboBox_DropDownClosed">
+                                                    <ComboBox.ItemContainerStyle>
+                                                        <Style TargetType="ComboBoxItem" BasedOn="{StaticResource DefaultComboBoxItemStyle}">
+                                                            <Setter Property="Padding" Value="0"/>
+                                                        </Style>
+                                                    </ComboBox.ItemContainerStyle>
+                                                    <ComboBox.ItemTemplate>
+                                                        <DataTemplate>
+                                                            <Border Padding="8,0">
+                                                                <CheckBox HorizontalAlignment="Stretch" IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}" Content="{Binding Id}"/>
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ComboBox.ItemTemplate>
+                                                </ComboBox>
+                                                <TextBlock IsHitTestVisible="False" Text="{Binding SelectedWarnings, Converter={StaticResource FormatBuildWarningIds}}" Style="{StaticResource DataGridTextBlockStyle}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellEditingTemplate>
+                                </DataGridTemplateColumn>
+                                <DataGridTemplateColumn IsReadOnly="True" MinWidth="36" MaxWidth="36">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Button x:Name="RemoveWarningSuppressionsButton" HorizontalAlignment="Stretch" ToolTip="Remove this rule" Click="RemoveWarningSuppressionsButton_Click">
+                                                <fa5:SvgAwesome Icon="Regular_TrashAlt" Foreground="{StaticResource DangerForegroundBrush}" Width="16" Height="16"/>
+                                            </Button>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
+                        <Button x:Name="AddBuildWarningSuppressionButton" HorizontalAlignment="Right" ToolTip="Add a new rule" Click="AddBuildWarningSuppressionButton_Click">
+                            <fa5:SvgAwesome Icon="Solid_Plus" Width="16" Height="16" HorizontalAlignment="Center"/>
+                        </Button>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+                <GroupBox Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                    <GroupBox.Header>
+                        <ui:SimpleStackPanel Orientation="Horizontal">
+                            <fa5:SvgAwesome Icon="Solid_Flask" Width="14" Height="14" VerticalAlignment="Center"
+                                            Foreground="{DynamicResource SystemControlHighlightAccentBrush}" Margin="0,0,8,0"/>
+                            <TextBlock Text="Experimental" VerticalAlignment="Center"/>
+                        </ui:SimpleStackPanel>
+                    </GroupBox.Header>
+                    <ui:SimpleStackPanel>
+                        <CheckBox IsChecked="{Binding IncludeChildNpcs}"
+                                  Content="Include child NPCs (for child overhauls)"/>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Foreground="{StaticResource MutedTextBrush}"
+                                   TextWrapping="Wrap" Margin="28,4,0,0">
+                            Lets child overhauls (e.g. RS Children, The Kids Are Alright) be merged. Children are skipped
+                            by default because merging their appearance can give them an adult body if the race/skin is
+                            not handled right. This fork keeps each child's race and child skin and merges the child race
+                            into the output, so it should stay a child - but verify in game (spawn a few children and
+                            check their bodies) before trusting a full build. Off by default.
+                        </TextBlock>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+                <GroupBox Header="Appearance" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                    <ui:SimpleStackPanel>
+                        <TextBlock Text="Color theme" Style="{StaticResource FormLabelStyle}"/>
+                        <ui:SimpleStackPanel Orientation="Horizontal">
+                            <RadioButton GroupName="Theme" Content="System" IsChecked="{Binding IsThemeSystem}"/>
+                            <RadioButton GroupName="Theme" Content="Light" IsChecked="{Binding IsThemeLight}" Margin="16,0,0,0"/>
+                            <RadioButton GroupName="Theme" Content="Dark" IsChecked="{Binding IsThemeDark}" Margin="16,0,0,0"/>
+                        </ui:SimpleStackPanel>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+                <GroupBox Header="Online mugshots (NPC Face Finder)" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                    <ui:SimpleStackPanel>
+                        <CheckBox IsChecked="{Binding EnableOnlineMugshots}"
+                                  Content="Fetch missing mugshots from NPC Face Finder"/>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Foreground="{StaticResource MutedTextBrush}"
+                                   TextWrapping="Wrap" Margin="28,4,0,0">
+                            Fills in mugshots for installed mods that don't have a local pack by downloading them from
+                            the NPC Face Finder online database. On by default.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" TextWrapping="Wrap" Margin="28,0,0,0">
+                            Faces provided by <Hyperlink NavigateUri="https://npcfacefinder.com"
+                                RequestNavigate="Hyperlink_RequestNavigate">NPC Face Finder</Hyperlink>.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Foreground="{StaticResource MutedTextBrush}"
+                                   TextWrapping="Wrap" Margin="0,8,0,0">
+                            Downloaded mugshots are cached on disk so revisiting an NPC is instant. Clear the cache to
+                            reclaim space or force a fresh download - images come back on demand.
+                        </TextBlock>
+                        <ui:SimpleStackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                            <Button Content="Clear online mugshot cache" Click="ClearFaceFinderCache_Click"/>
+                            <TextBlock Text="{Binding FaceFinderCacheStatus}" VerticalAlignment="Center" Margin="12,0,0,0"
+                                       Foreground="{StaticResource MutedTextBrush}"/>
+                        </ui:SimpleStackPanel>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+                <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Center" Margin="0,16,0,0" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource BoolToVisibility}}" d:Visibility="Collapsed">
+                    <Button x:Name="WelcomeDoneButton" FontSize="20" ToolTipService.InitialShowDelay="50" Click="WelcomeDoneButton_Click">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource AccentButtonStyle}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ModDirectoryExists}" Value="False">
+                                        <Setter Property="Background" Value="{StaticResource DangerBackgroundBrush}"/>
+                                        <Setter Property="ToolTip" Value="WARNING: Specified mod directory doesn't exist"/>
+                                    </DataTrigger>
+                                    <DataTrigger Binding="{Binding IsModDirectorySpecified}" Value="False">
+                                        <Setter Property="ToolTip" Value="WARNING: Mod directory has not been chosen"/>
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                        I'm Done
+                    </Button>
+                </ui:SimpleStackPanel>
+            </ui:SimpleStackPanel>
+        </ui:ScrollViewerEx>
+    </Grid>
+</ui:Page>

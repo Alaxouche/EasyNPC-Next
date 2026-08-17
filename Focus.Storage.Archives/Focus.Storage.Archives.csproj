@@ -1,0 +1,20 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <AssemblyName>Focus.Storage.Archives</AssemblyName>
+    <AssemblyTitle>Bethesda Archive Utilities</AssemblyTitle>
+    <Product>EasyMod</Product>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="libbsarch.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="libbsarch.dll">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

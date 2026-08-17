@@ -1,0 +1,30 @@
+<ui:Page x:Class="Focus.Apps.EasyNpc.Debug.LogPage"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+         xmlns:fa5="http://schemas.fontawesome.com/icons/"
+         xmlns:debug="clr-namespace:Focus.Apps.EasyNpc.Debug"
+         xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
+         xmlns:ui="http://schemas.modernwpf.com/2019"
+         mc:Ignorable="d"
+         d:DataContext="{d:DesignInstance Type=main:MainViewModel}"
+         d:DesignHeight="450" d:DesignWidth="800">
+    <DockPanel DataContext="{Binding Path=Log}">
+        <ui:SimpleStackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="0,0,0,8">
+            <Button x:Name="OpenLogFileButton" Click="OpenLogFileButton_Click" ToolTip="Open the current session's log file">
+                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <fa5:SvgAwesome Icon="Regular_FileAlt" Width="14" Height="14" VerticalAlignment="Center"/>
+                    <TextBlock Text="Open log file" VerticalAlignment="Center"/>
+                </ui:SimpleStackPanel>
+            </Button>
+            <Button x:Name="OpenLogFolderButton" Click="OpenLogFolderButton_Click" ToolTip="Open the folder containing all log files">
+                <ui:SimpleStackPanel Orientation="Horizontal" Spacing="8">
+                    <fa5:SvgAwesome Icon="Regular_FolderOpen" Width="14" Height="14" VerticalAlignment="Center"/>
+                    <TextBlock Text="Open log folder" VerticalAlignment="Center"/>
+                </ui:SimpleStackPanel>
+            </Button>
+        </ui:SimpleStackPanel>
+        <debug:ScrollingTextBox IsReadOnly="True" Text="{Binding Path=Text, Mode=OneWay}"></debug:ScrollingTextBox>
+    </DockPanel>
+</ui:Page>

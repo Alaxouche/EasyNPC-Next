@@ -1,0 +1,144 @@
+﻿<ui:Page x:Class="Focus.Apps.EasyNpc.Build.BuildPage"
+         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+         xmlns:bp="clr-namespace:Focus.Apps.EasyNpc.Build.Preview"
+         xmlns:bu="clr-namespace:Focus.Apps.EasyNpc.Build.UI"
+         xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+         xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
+         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+         xmlns:ui="http://schemas.modernwpf.com/2019"
+         KeepAlive="True"
+         mc:Ignorable="d" 
+         d:DataContext="{d:DesignInstance Type=main:MainViewModel}"
+         d:DesignHeight="700" d:DesignWidth="1200">
+    <Grid DataContext="{Binding Build}">
+        <Grid>
+            <Border Visibility="{Binding IsBuildStarted, Converter={StaticResource InvBoolToVisibility}}">
+                <bp:BuildPreviewView DataContext="{Binding Preview}"
+                                     d:Visibility="Collapsed"
+                                     BuildClick="BuildPreviewView_BuildClick"/>
+            </Border>
+            <Border Padding="8"
+                    Style="{StaticResource GroupBorder}"
+                    Visibility="{Binding IsBuildInProgress, Converter={StaticResource BoolToVisibility}}"
+                    d:Visibility="Visible">
+                <GroupBox x:Name="BuildConfirmationGroup" Header="Status" Padding="0">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource SmallHeaderStyle}" Text="Task Progress"/>
+                        <bu:BuildProgress DataContext="{Binding Progress}" Margin="0,8,0,0"/>
+                    </DockPanel>
+                </GroupBox>
+            </Border>
+            <Border Padding="8"
+                    Style="{StaticResource GroupBorder}"
+                    Visibility="{Binding IsBuildCompleted, Converter={StaticResource BoolToVisibility}}"
+                    d:Visibility="Collapsed">
+                <GroupBox Header="All done">
+                    <ui:SimpleStackPanel>
+                        <ui:SimpleStackPanel.Resources>
+                            <ControlTemplate x:Key="ListItem" TargetType="ContentControl">
+                                <BulletDecorator Margin="16,0,0,0">
+                                    <BulletDecorator.Bullet>
+                                        <TextBlock FontSize="14" Text="{Binding RelativeSource={RelativeSource TemplatedParent}, Path=Tag}"/>
+                                    </BulletDecorator.Bullet>
+                                    <ContentPresenter Margin="8,0,0,0"/>
+                                </BulletDecorator>
+                            </ControlTemplate>
+                            <Style x:Key="ListItemStyle" TargetType="TextBlock" BasedOn="{StaticResource ParagraphStyle}"/>
+                        </ui:SimpleStackPanel.Resources>
+
+                        <TextBlock Style="{StaticResource FirstParagraphStyle}" Text="Your NPC merge is ready at:"/>
+                        <ui:HyperlinkButton Content="{Binding BuildSettings.OutputDirectory}" d:Content="C:\Foo\Bar\Baz" Click="HyperlinkButton_Click"/>
+                        <TextBlock Style="{StaticResource ParagraphStyle}">
+                            <Run FontWeight="SemiBold" Text="{Binding BuildReport.MergedNpcCount, Mode=OneWay}" d:Text="1234"/> NPCs were merged successfully.
+                        </TextBlock>
+                        <Border BorderBrush="{StaticResource WarningForegroundBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="8"
+                                Margin="0,8,0,0"
+                                Visibility="{Binding BuildReport.HasSkippedNpcs, Converter={StaticResource BoolToVisibility}}"
+                                d:Visibility="Visible">
+                            <ui:SimpleStackPanel>
+                                <TextBlock Style="{StaticResource ParagraphStyle}" Margin="0">
+                                    <Bold Foreground="{StaticResource WarningForegroundBrush}">Some NPCs could not be merged.</Bold>
+                                    The NPCs below had records that could not be read or imported. They were left out of the merge and will
+                                    keep their regular load order appearance and behavior. See the
+                                    <Hyperlink Click="LogLink_Click">log file</Hyperlink> for full details.
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding BuildReport.SkippedNpcs}" Margin="16,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource ParagraphStyle}" Margin="0,2,0,0" TextWrapping="Wrap">
+                                                - <Run FontWeight="SemiBold" Text="{Binding Label, Mode=OneWay}"/>
+                                                (<Run Text="{Binding PluginName, Mode=OneWay}" Style="{StaticResource CodeStyle}"/>)
+                                                - <Run Text="{Binding Reason, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ui:SimpleStackPanel>
+                        </Border>
+                        <TextBlock Style="{StaticResource ParagraphStyle}">
+                            To start using the new mod:
+                        </TextBlock>
+                        <ContentControl Template="{StaticResource ListItem}" Tag="1.">
+                            <!--
+                                Weird structure here is to play nice with the BulletDecorator, which only vertically-aligns to the top when the child control is text.
+                                That's why we don't just use a StackPanel/SimpleStackPanel here.
+                            -->
+                            <TextBlock Style="{StaticResource ListItemStyle}">
+                                <TextBlock TextWrapping="Wrap" Visibility="{Binding Source={StaticResource LaunchedByModOrganizer}, Converter={StaticResource BoolToVisibility}}" d:Visibility="Visible">
+                                    Import the mod. After closing <Run Text="{StaticResource AppName}"/>, click the Refresh button in Mod Organizer, or press F5 to refresh your mods.
+                                    The new mod should appear at the bottom of the list.
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Visibility="{Binding Source={StaticResource LaunchedByVortex}, Converter={StaticResource BoolToVisibility}}" d:Visibility="Visible">
+                                    Import the mod. After closing <Run Text="{StaticResource AppName}"/>, it should automatically appear in your mod list. If it does not, you may need
+                                    to restart Vortex and acknowledge a warning about the mod staging folder being modified.
+                                </TextBlock>
+                                <TextBlock TextWrapping="Wrap" Visibility="{Binding Source={StaticResource LaunchedStandaloneOrUnknown}, Converter={StaticResource BoolToVisibility}}" d:Visibility="Visible">
+                                    Import the mod. Since <Run Text="{StaticResource AppName}"/> wasn't able to determine which mod manager you are using, you will have to figure this
+                                    out on your own. It may involve copying or moving the mod folder you just created, or zipping it and importing it as a file.
+                                </TextBlock>
+                            </TextBlock>
+                        </ContentControl>
+                        <ContentControl Template="{StaticResource ListItem}" Tag="2.">
+                            <TextBlock Style="{StaticResource ListItemStyle}">
+                                Activate the mod named <Run FontWeight="SemiBold" Text="{Binding BuildSettings.OutputModName}" d:Text="NPC Merge"/>, and ensure that the plugin
+                                <Run Text="{Binding Preview.Output.PluginName, Mode=OneWay}" Style="{StaticResource CodeStyle}" d:Text="NPC Appearances Merged.esp"/> is at the bottom of your load order.
+                                It does not matter whether it goes above or below other generated patches (Wrye Bash, Synthesis, etc. - see the note under "Optional instructions" below) but it
+                                should load after all standard mods.
+                            </TextBlock>
+                        </ContentControl>
+                        <ContentControl Template="{StaticResource ListItem}" Tag="3.">
+                            <TextBlock Style="{StaticResource ListItemStyle}">
+                                <Bold Foreground="{StaticResource WarningForegroundBrush}">Deactivate other NPC overhauls.</Bold> This will free up slots in your load order and eliminate possible conflicts between the
+                                <Run Text="{StaticResource AppName}"/> merge and its original sources.
+                            </TextBlock>
+                        </ContentControl>
+                        <TextBlock Style="{StaticResource ParagraphStyle}">
+                            Optional instructions for other tools:
+                        </TextBlock>
+                        <ContentControl Template="{StaticResource ListItem}" Tag="-">
+                            <TextBlock Style="{StaticResource ListItemStyle}">
+                                <Bold>LOOT:</Bold> Add <Run Text="{Binding Preview.Output.PluginName, Mode=OneWay}" Style="{StaticResource CodeStyle}" d:Text="NPC Appearances Merged.esp"/> to the "Dynamic Patches"
+                                group so that it stays near the bottom after each sort.
+                            </TextBlock>
+                        </ContentControl>
+                        <ContentControl Template="{StaticResource ListItem}" Tag="-">
+                            <TextBlock Style="{StaticResource ParagraphStyle}">
+                                <Bold>Automated Patchers (Wrye Bash, Synthesis, etc.):</Bold> You can run <Run Text="{StaticResource AppName}"/> either before or after these patchers. If you've selected a patch
+                                (<Run Style="{StaticResource CodeStyle}">Bashed Patch, 0.esp</Run>, <Run Style="{StaticResource CodeStyle}">Synthesis.esp</Run>, etc.) as the plugin source for any NPCs, then make
+                                sure that <Run Text="{Binding Preview.Output.PluginName, Mode=OneWay}" Style="{StaticResource CodeStyle}" d:Text="NPC Appearances Merged.esp"/> loads after the patch. Otherwise,
+                                re-run those patchers after finishing with <Run Text="{StaticResource AppName}"/>.
+                            </TextBlock>
+                        </ContentControl>
+                        <TextBlock Style="{StaticResource ParagraphStyle}">
+                            You've reached the end and can exit the program now.
+                        </TextBlock>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+            </Border>
+        </Grid>
+    </Grid>
+</ui:Page>
