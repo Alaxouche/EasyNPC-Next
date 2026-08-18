@@ -47,6 +47,8 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             var metadata = new Metadata
             {
                 SkippedNpcs = defaults.Skipped.Concat(faces.Skipped).ToList(),
+                BrokenFaceGenPaths = textureExtraction.BrokenFaceGenPaths.OrderBy(
+                    p => p, StringComparer.CurrentCultureIgnoreCase).ToList(),
                 FailedTexturePathExtractionSources = textureExtraction.FailedSourcePaths.ToList(),
                 MissingAssetPaths = faceGen.FailedPaths
                     .Concat(sharedResources.FailedPaths)
@@ -74,6 +76,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
         class Metadata
         {
             public string AppVersion { get; set; } = AssemblyProperties.Version.ToString();
+            public List<string> BrokenFaceGenPaths { get; set; } = new();
             public List<string> FailedTexturePathExtractionSources { get; set; } = new();
             public List<string> MissingAssetPaths { get; set; } = new();
             public List<SkippedNpc> SkippedNpcs { get; set; } = new();

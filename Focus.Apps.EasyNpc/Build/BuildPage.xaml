@@ -79,6 +79,32 @@
                                 </ItemsControl>
                             </ui:SimpleStackPanel>
                         </Border>
+                        <Border BorderBrush="{StaticResource WarningForegroundBrush}"
+                                BorderThickness="1"
+                                CornerRadius="4"
+                                Padding="8"
+                                Margin="0,8,0,0"
+                                Visibility="{Binding BuildReport.HasBrokenFaceGen, Converter={StaticResource BoolToVisibility}}"
+                                d:Visibility="Visible">
+                            <ui:SimpleStackPanel>
+                                <TextBlock Style="{StaticResource ParagraphStyle}" Margin="0">
+                                    <Bold Foreground="{StaticResource WarningForegroundBrush}">Some NPC faces look broken.</Bold>
+                                    The mods you chose for the NPCs below ship a FaceGen mesh that is empty or corrupt, which shows as an
+                                    invisible face in game. EasyNPC can't repair a broken mesh - pick a different face for these NPCs, or
+                                    fix the source mod. See the <Hyperlink Click="LogLink_Click">log file</Hyperlink> for the full list.
+                                </TextBlock>
+                                <ItemsControl ItemsSource="{Binding BuildReport.BrokenFaceGenNpcs}" Margin="16,4,0,0">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Style="{StaticResource ParagraphStyle}" Margin="0,2,0,0" TextWrapping="Wrap">
+                                                - <Run FontWeight="SemiBold" Text="{Binding Label, Mode=OneWay}"/>
+                                                (<Run Text="{Binding PluginName, Mode=OneWay}" Style="{StaticResource CodeStyle}"/>)
+                                            </TextBlock>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ui:SimpleStackPanel>
+                        </Border>
                         <TextBlock Style="{StaticResource ParagraphStyle}">
                             To start using the new mod:
                         </TextBlock>

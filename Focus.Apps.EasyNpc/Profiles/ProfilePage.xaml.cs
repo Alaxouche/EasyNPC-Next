@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Linq;
+using System.Windows;
 using System.Windows.Input;
 
 namespace Focus.Apps.EasyNpc.Profiles
@@ -29,12 +30,18 @@ namespace Focus.Apps.EasyNpc.Profiles
                     "Batch: auto-assign faces", MessageBoxButton.OK, MessageBoxImage.Information);
                 return;
             }
+            const int maxListed = 30;
+            var toChangeNames = Model.GetFilteredFacesToAutoAssign(maxListed);
+            var changeList = string.Join("\n", toChangeNames.Select(name => "  - " + name));
+            if (toChange > toChangeNames.Count)
+                changeList += $"\n  ... and {toChange - toChangeNames.Count} more";
             var confirm = MessageBox.Show(
                 owner,
                 $"Auto-assign the recommended face to the {total} NPC(s) currently shown by the filter?\n\n" +
                 $"{toChange} of them would change; the rest already match. This uses the same recommendation as " +
                 "\"Reset Face Selections\" (the last plugin that modifies each NPC's face, resolved to its source), " +
                 "and does not touch the Default (behavior) plugin.\n\n" +
+                $"Would change:\n{changeList}\n\n" +
                 "Tip: narrow the list first with the filters to control which NPCs are affected.",
                 "Batch: auto-assign faces", MessageBoxButton.OKCancel, MessageBoxImage.Question);
             if (confirm != MessageBoxResult.OK)

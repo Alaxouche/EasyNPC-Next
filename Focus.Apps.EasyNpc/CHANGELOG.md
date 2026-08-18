@@ -5,6 +5,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.1.0.0] - 2026-08-18
+### Added
+- **Broken FaceGen detection.** NPCs whose chosen mod ships an empty or corrupt face mesh - which shows up as an invisible face in game - are now listed on the build's "All done" screen and in the log, so you can pick a different face or fix the source mod. EasyNPC can't rebuild a broken mesh, but it no longer ships one silently.
+- **"Unused appearance mods" report (Maintenance page).** Lists installed face mods you never picked for any NPC, so you can safely remove the ones you only kept to compare faces.
+- **Theme setting (System / Light / Dark)** in Settings, applied live and remembered between sessions.
+- **The window remembers its size, position and maximized state** between sessions.
+- **Batch "Set as Default Plugin".** A new Profile-page Batch action sets the selected mod as the Default (stats and behavior) plugin for every NPC in the current filter.
+- **Online mugshot controls.** Online mugshots can now be turned off in Settings, there's a "Clear cache" button, each card links to the mod's Nexus page, and NPC Face Finder is credited.
+- **Tooltips on the loading steps** (Mod Scan, Analysis, Profile) explaining what each one does.
+
+### Changed
+- **Online mugshots now work on every machine.** The requests no longer go through the Windows proxy resolver, which is missing on some (debloated / LTSC / N) Windows installs and made every online mugshot lookup fail there.
+- **Faster mugshots.** Images are fetched and decoded in parallel, and the next few NPCs are prefetched in the background, so moving down the list is much snappier.
+- **The Vanilla card shows the real vanilla face** again, instead of occasionally borrowing a random overhaul's face.
+- **Mods that don't change the face** (USSEP, AI mods, merges...) now show the vanilla face instead of a blank silhouette.
+- **Auto-assign lists which NPCs would change** before you confirm, not just the count.
+- **Cards for plugins that aren't loaded are hidden** from the mugshot gallery.
+- **Smaller, cleaner download.** The build ships as a single self-contained exe instead of a folder full of DLLs.
+
+### Removed
+- **Experimental in-app 3D face preview and mugshot generation.** Online mugshots (NPC Face Finder) cover the same need, so the early, imperfect renderer and its Settings toggle were removed.
+
+## [1.0.0.0] - 2026-08-18
 ### Added
 - **Child NPC support (EXPERIMENTAL, off by default).** Child NPCs are normally skipped, because merging their appearance can give them an adult body if the race/skin isn't handled exactly right. A new Settings option ("Include child NPCs") lets child overhauls (RS Children, The Kids Are Alright, etc.) be merged. For children the merge keeps the child's race and child skin and pulls the child race into the output (so the child mod doesn't become a master), which should keep them children. Because a wrong result here is very visible, this ships off by default and must be verified in game (spawn a few children and check their bodies) before trusting a full build.
 - **Online mugshots from NPC Face Finder (on by default).** Installed face cards that have no local mugshot are filled in with an image from the open [NPC Face Finder](https://npcfacefinder.com) API. It runs asynchronously, so it never slows the gallery (the local packs render instantly and the online images arrive a moment later), and it only touches cards for mods you actually have - it never adds cards for mods you don't. Faces are matched to your installed mods by Nexus mod id first (so a differently-named mod folder still matches) and mod name as a fallback. Images are cached on disk (converted from WebP to PNG) so repeat views are instant. Offline or on any failure it just does nothing, and the local packs and 3D preview still work. Every face credits its mod author - please support them.
@@ -345,7 +369,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release with basic record-facegen sync. Profiles, build, settings, and high-level maintenance functions.
 
-[Unreleased]: https://github.com/focustense/easymod/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.1.0.0...HEAD
+[1.1.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.0.0.0...v1.1.0.0
+[1.0.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/focustense-v0.9.6...v1.0.0.0
 [0.9.6]: https://github.com/focustense/easymod/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/focustense/easymod/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/focustense/easymod/compare/v0.9.3...v0.9.4

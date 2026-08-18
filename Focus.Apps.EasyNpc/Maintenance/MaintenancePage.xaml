@@ -55,6 +55,27 @@
                 </GroupBox>
             </Border>
             <Border Style="{StaticResource GroupBorder}" Margin="0,8,0,0" Padding="8">
+                <GroupBox Header="Unused appearance mods" Padding="0,0,0,4">
+                    <ui:SimpleStackPanel>
+                        <TextBlock Style="{StaticResource FirstParagraphStyle}" TextWrapping="Wrap">
+                            Lists installed appearance mods whose face you never picked for any NPC. Handy if you installed
+                            several overhauls, chose the faces you liked, and want to remove the rest.
+                        </TextBlock>
+                        <Button x:Name="FindUnusedModsButton" Click="FindUnusedModsButton_Click" Margin="0,4,0,0">Find unused appearance mods</Button>
+                        <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}"
+                                   Text="{Binding UnusedModsStatus}"
+                                   Visibility="{Binding HasScannedUnusedMods, Converter={StaticResource BoolToVisibility}}"/>
+                        <ItemsControl Margin="0,8,0,0" ItemsSource="{Binding UnusedAppearanceMods}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding}" Margin="0,1,0,1"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ui:SimpleStackPanel>
+                </GroupBox>
+            </Border>
+            <Border Style="{StaticResource GroupBorder}" Margin="0,8,0,0" Padding="8">
                 <GroupBox Header="Log files" Padding="0,0,0,4">
                     <ui:SimpleStackPanel>
                         <TextBlock Style="{StaticResource FirstParagraphStyle}">

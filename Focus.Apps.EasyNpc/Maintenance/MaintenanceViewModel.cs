@@ -1,8 +1,10 @@
 ﻿using Focus.Apps.EasyNpc.Configuration;
 using Focus.Apps.EasyNpc.Profiles;
+using Focus.ModManagers;
 using PropertyChanged;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Linq;
@@ -42,16 +44,64 @@ namespace Focus.Apps.EasyNpc.Maintenance
         public decimal LogFileSizeMb { get; private set; }
         public bool OnlyResetInvalid { get; set; }
 
+        // Appearance mods (mods with a plugin that changes at least one NPC's face) that you never picked as the face
+        // for any NPC - i.e. safe to remove if you only kept them to compare faces.
+        public ObservableCollection<string> UnusedAppearanceMods { get; } = new();
+        public bool HasScannedUnusedMods { get; private set; }
+        public string UnusedModsStatus { get; private set; } = string.Empty;
+
+        private readonly IModRepository modRepository;
         private readonly IReadOnlySet<IRecordKey> npcKeys;
         private readonly IProfileEventLog profileEventLog;
         private readonly Profile profile;
 
-        public MaintenanceViewModel(Profile profile, IProfileEventLog profileEventLog)
+        public MaintenanceViewModel(Profile profile, IProfileEventLog profileEventLog, IModRepository modRepository)
         {
             this.profile = profile;
             this.profileEventLog = profileEventLog;
+            this.modRepository = modRepository;
 
             npcKeys = profile.Npcs.Select(x => new RecordKey(x)).ToHashSet(RecordKeyComparer.Default);
+        }
+
+        // Lists mods that provide a face for some NPC but were never chosen. A mod is only listed when NONE of its
+        // face-changing plugins are used, so it is genuinely safe to remove (for faces).
+        public void FindUnusedAppearanceMods()
+        {
+            var usedFacePlugins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var faceProvidingPlugins = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var npc in profile.Npcs)
+            {
+                if (!npc.FaceOption.IsBaseGame)
+                    usedFacePlugins.Add(npc.FaceOption.PluginName);
+                foreach (var option in npc.Options)
+                    if (option.Analysis.ComparisonToBase?.ModifiesFace == true)
+                        faceProvidingPlugins.Add(option.PluginName);
+            }
+            var unused = faceProvidingPlugins
+                .Select(plugin => new { Plugin = plugin, Mod = ModNameForPlugin(plugin) })
+                .Where(x => !string.IsNullOrEmpty(x.Mod))
+                .GroupBy(x => x.Mod!, StringComparer.OrdinalIgnoreCase)
+                .Where(group => group.All(x => !usedFacePlugins.Contains(x.Plugin)))
+                .Select(group => group.Key)
+                .OrderBy(name => name, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+
+            UnusedAppearanceMods.Clear();
+            foreach (var mod in unused)
+                UnusedAppearanceMods.Add(mod);
+            HasScannedUnusedMods = true;
+            UnusedModsStatus = unused.Count == 0
+                ? "No unused appearance mods found - every installed face mod is used by at least one NPC."
+                : $"{unused.Count} appearance mod(s) provide faces you didn't pick for any NPC. If you only kept them to " +
+                  "compare faces, they are safe to remove.";
+        }
+
+        private string? ModNameForPlugin(string pluginName)
+        {
+            return modRepository.SearchForFiles(pluginName, false)
+                .Select(result => result.ModKey.Name)
+                .FirstOrDefault(name => !string.IsNullOrEmpty(name));
         }
 
         public void DeleteOldLogFiles()

@@ -17,6 +17,11 @@ namespace Focus.Apps.EasyNpc.Build
             Formatting = Formatting.Indented,
         };
 
+        // NPCs whose chosen face ships a broken (empty, corrupt or geometry-less) FaceGen mesh, which renders as an
+        // invisible face in game.
+        public IReadOnlyList<SkippedNpc> BrokenFaceGenNpcs { get; init; } = Array.Empty<SkippedNpc>();
+        [JsonIgnore]
+        public bool HasBrokenFaceGen => BrokenFaceGenNpcs.Count > 0;
         [JsonIgnore]
         public bool HasSkippedNpcs => SkippedNpcs.Count > 0;
         public int MergedNpcCount { get; init; }

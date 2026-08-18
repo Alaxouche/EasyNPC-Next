@@ -45,6 +45,11 @@ namespace Focus.Apps.EasyNpc.Profiles
         private readonly ILineupBuilder lineupBuilder;
         private readonly IMessageBus messageBus;
         private bool onlineMugshotsEnabled;
+        // In-memory FaceFinder metadata cache, so revisiting an NPC - or landing on one we prefetched - skips the
+        // network lookup. Images are cached separately on disk by the repository.
+        private readonly Dictionary<IRecordKey, IReadOnlyList<FaceFinder.FaceFinderFace>> faceCache =
+            new(RecordKeyComparer.Default);
+        private System.Threading.CancellationTokenSource? prefetchCts;
         private readonly Dictionary<IRecordKey, INpc> npcs = new(RecordKeyComparer.Default);
         private readonly Dictionary<string, int> pluginOrder;
         private readonly Profile profile;
@@ -178,6 +183,16 @@ namespace Focus.Apps.EasyNpc.Profiles
                 npc.CanCustomizeFace && !npc.IsFacePlugin(npc.GetPolicyRecommendation().FacePluginName));
         }
 
+        // The names of the filtered NPCs auto-assign would change, capped so a huge list doesn't blow up the dialog.
+        public IReadOnlyList<string> GetFilteredFacesToAutoAssign(int max)
+        {
+            return Grid.Npcs
+                .Where(npc => npc.CanCustomizeFace && !npc.IsFacePlugin(npc.GetPolicyRecommendation().FacePluginName))
+                .Take(max)
+                .Select(npc => $"{npc.EditorId} '{npc.Name}'")
+                .ToList();
+        }
+
         public bool SelectNpc(IRecordKey key)
         {
             if (npcs.TryGetValue(key, out var npc))
@@ -296,7 +311,54 @@ namespace Focus.Apps.EasyNpc.Profiles
             SelectedMugshot = SelectedNpc.SelectedMugshot;
             SelectedNpc.PropertyChanged += SelectedNpc_PropertyChanged;
             if (onlineMugshotsEnabled)
+            {
                 _ = FillMugshotsFromFaceFinderAsync(npc, SelectedNpc);
+                PrefetchUpcoming(npc);
+            }
+        }
+
+        // Warms the FaceFinder metadata cache for the next few NPCs in the current list, so moving to the next one
+        // feels instant instead of waiting on a fresh lookup. Kept small and cancellable to stay light on the shared
+        // online API (a full-list prefetch would risk rate limiting).
+        private void PrefetchUpcoming(INpc current)
+        {
+            prefetchCts?.Cancel();
+            prefetchCts?.Dispose();
+            prefetchCts = new System.Threading.CancellationTokenSource();
+            _ = PrefetchUpcomingAsync(current, prefetchCts.Token);
+        }
+
+        private async Task PrefetchUpcomingAsync(INpc current, System.Threading.CancellationToken token)
+        {
+            const int lookahead = 3;
+            try
+            {
+                var list = Grid.Npcs.ToList();
+                var index = list.FindIndex(n => RecordKeyComparer.Default.Equals(n, current));
+                if (index < 0)
+                    return;
+                for (var i = index + 1; i <= index + lookahead && i < list.Count; i++)
+                {
+                    token.ThrowIfCancellationRequested();
+                    if (!faceCache.ContainsKey(list[i]))
+                        await GetCachedFacesAsync(list[i], token);
+                }
+            }
+            catch
+            {
+                // Best-effort: a cancellation (selection moved on) or a network hiccup is fine.
+            }
+        }
+
+        // FaceFinder lookup with the in-memory metadata cache in front of it.
+        private async Task<IReadOnlyList<FaceFinder.FaceFinderFace>> GetCachedFacesAsync(
+            INpc npc, System.Threading.CancellationToken token)
+        {
+            if (faceCache.TryGetValue(npc, out var cached))
+                return cached;
+            var faces = await faceFinder.GetFacesAsync(npc, token);
+            faceCache[npc] = faces;
+            return faces;
         }
 
         // Fills installed face cards that have no local mugshot with an image from NPC Face Finder, asynchronously so it
@@ -308,7 +370,7 @@ namespace Focus.Apps.EasyNpc.Profiles
             IReadOnlyList<FaceFinder.FaceFinderFace> faces;
             try
             {
-                faces = await faceFinder.GetFacesAsync(npc, cts.Token);
+                faces = await GetCachedFacesAsync(npc, cts.Token);
             }
             catch (Exception ex)
             {

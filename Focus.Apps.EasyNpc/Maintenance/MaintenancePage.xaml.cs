@@ -30,6 +30,12 @@ namespace Focus.Apps.EasyNpc.Maintenance
             Task.Run(() => model?.DeleteOldLogFiles());
         }
 
+        private void FindUnusedModsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Runs on the UI thread: it updates a bound collection, and the lookups are in-memory (fast).
+            Model?.FindUnusedAppearanceMods();
+        }
+
         private async void EvolveToLoadOrderButton_Click(object sender, RoutedEventArgs e)
         {
             await PreviewAndReset(NpcProfileField.DefaultPlugin, "Default Plugin", m => m.ResetNpcDefaults());
