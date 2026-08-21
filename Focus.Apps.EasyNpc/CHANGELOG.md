@@ -6,6 +6,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.2.0.0] - 2026-08-21
+### Added
+- **Set the game folder yourself.** A new "Game Data Directory" box on the Settings page (and a "Choose the game folder..." button on the "Game not found" dialog) lets you point EasyNPC at your game when it can't be detected automatically - a Linux/Proton install, a portable copy, or a store that isn't recognized. The path is checked immediately (it has to contain `Skyrim.esm`) instead of failing on the next launch, and a `-p` argument from your mod manager still takes priority.
+- **GOG support.** EasyNPC now recognizes a GOG install and reads *its* `plugins.txt` / `loadorder.txt` instead of the Steam edition's - the cause of "it always defaults to the plugins.txt for the Steam Skyrim" even with the correct `-p` path. Detection is automatic from the game folder; there's also an explicit "Game Edition" picker in Settings, and the app now falls back to the GOG install when only that one is present instead of reporting the game as missing.
+- **Merge only the NPCs you customized (EXPERIMENTAL, off by default).** A new build option restricts the merge to NPCs whose Default or Face Plugin you actually chose, giving a much smaller plugin with far fewer masters when you only care about a handful of NPCs. Template-based NPCs (guards and other generics) are always kept, because the merge repairs their inherited FaceGen whether or not you touched them. The build screen shows how many of your NPCs the setting would merge before you build. Leave it off for a normal, complete merge.
+- **"Mugshot matching" check (Maintenance page).** Lists mugshot pack folders that don't line up with any installed mod - the usual reason faces show as grey silhouettes even though the packs are installed - with a guess at which mod each one belongs to, so you can link them under Settings -> "Use Previews For".
+- **Export and copy the verification report.** EasyNPC-Verify now has "Export" and "Copy" buttons that produce a plain-text summary of the whole report, so a problem can be pasted into a bug report instead of screenshotted.
+
+### Changed
+- **Mugshot packs now match mods whose folder is named differently.** Pack folders are matched to installed mods after normalizing away mod-manager install suffixes (`Bijin_AIO-11395-1-0-1-...`), separator styles (`_`, `-`, spaces) and apostrophes. This is what makes packs line up under Vortex, which stores mods under their download name, without a hand-written synonym for each one. Matching stays exact-after-normalization and refuses ambiguous cases: showing the wrong mod's face is worse than showing none.
+- **The first-run screen now says what online mugshots send.** The NPC Face Finder section is shown during setup, not only in Settings, and states plainly that the NPC's form ID is what leaves your PC (no account, no mod list, nothing about you) and that turning it off keeps the app fully offline.
+
+### Fixed
+- **The verifier no longer reports a conflict for NPCs it never touched.** For an NPC whose face you didn't change, EasyNPC deliberately writes no FaceGen, so the game keeps loading the one it already used. The verifier compared that inherited FaceGen against the merged record anyway and reported "Conflicting overrides detected", advising you to disable the "conflicting" mod - which was usually the Unofficial Patch, and disabling it brought back the blackface you were avoiding. These NPCs are now listed in a separate, neutral "Inherited FaceGen mismatches" section that states the condition exists with or without EasyNPC and that nothing needs fixing. The conflict section is now only about faces the merge actually shipped, and its advice matches: raise the output mod's priority, or extract the merged files loose.
+- **The face tint check never actually ran.** Its condition was true for every build - a loose build has no archived FaceGen, an archived build has no loose one - so "Face tints appear consistent" was always green and the mismatch count always zero, whatever the real state. Tint mismatches are now detected and reported.
+- **The verifier could report the merged plugin and every archive as missing.** It looked for them in the raw path the app was started with, while reading assets from the real data folder (which may be a `data` subfolder of that path). If you pointed the app at the game folder rather than its `Data` folder, the two disagreed. Everything now reads from the same folder the file providers do - the same fix already applied to the build in 1.0.0.0.
+- **Mods were compared by object identity rather than by what they are**, so a mod built in one place (the "Vanilla" entry) could never be recognized as the same mod found by the mod scanner, quietly turning correct results into reported conflicts.
+
 ## [1.1.0.0] - 2026-08-18
 ### Added
 - **Broken FaceGen detection.** NPCs whose chosen mod ships an empty or corrupt face mesh - which shows up as an invisible face in game - are now listed on the build's "All done" screen and in the log, so you can pick a different face or fix the source mod. EasyNPC can't rebuild a broken mesh, but it no longer ships one silently.
@@ -23,7 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Mods that don't change the face** (USSEP, AI mods, merges...) now show the vanilla face instead of a blank silhouette.
 - **Auto-assign lists which NPCs would change** before you confirm, not just the count.
 - **Cards for plugins that aren't loaded are hidden** from the mugshot gallery.
-- **Smaller, cleaner download.** The build ships as a single self-contained exe instead of a folder full of DLLs.
+- **Smaller, cleaner download.** The build ships as a single self-contained exe (plus the handful of native libraries that cannot be embedded) instead of a folder full of DLLs.
 
 ### Removed
 - **Experimental in-app 3D face preview and mugshot generation.** Online mugshots (NPC Face Finder) cover the same need, so the early, imperfect renderer and its Settings toggle were removed.
@@ -369,7 +387,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release with basic record-facegen sync. Profiles, build, settings, and high-level maintenance functions.
 
-[Unreleased]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.1.0.0...HEAD
+[Unreleased]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.2.0.0...HEAD
+[1.2.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.1.0.0...v1.2.0.0
 [1.1.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.0.0.0...v1.1.0.0
 [1.0.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/focustense-v0.9.6...v1.0.0.0
 [0.9.6]: https://github.com/focustense/easymod/compare/v0.9.5...v0.9.6

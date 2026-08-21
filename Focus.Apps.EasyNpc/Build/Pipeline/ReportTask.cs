@@ -35,7 +35,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             {
                 // Map each broken facegen mesh path back to the NPC it belongs to, so the report names the NPC (and its
                 // face plugin) instead of a cryptic file path.
-                var npcByFaceMesh = settings.Profile.Npcs
+                var npcByFaceMesh = settings.IncludedNpcs
                     .GroupBy(n => FileStructure.GetFaceMeshFileName(n), PathComparer.Default)
                     .ToDictionary(g => g.Key, g => g.First(), PathComparer.Default);
                 var brokenFaceGenNpcs = textureExtraction.BrokenFaceGenPaths

@@ -20,6 +20,18 @@ namespace Focus.Apps.EasyNpc.Maintenance
         public IReadOnlyList<string> SampleChanges { get; init; } = new List<string>();
     }
 
+    // One mugshot folder that couldn't be tied to an installed mod, with the closest installed mod name so the user
+    // can turn it into a synonym in one click instead of guessing.
+    public class UnmatchedMugshotFolder
+    {
+        public string FolderName { get; init; } = string.Empty;
+        public string? SuggestedModName { get; init; }
+        public bool HasSuggestion => !string.IsNullOrEmpty(SuggestedModName);
+        public string Description => HasSuggestion ?
+            $"{FolderName}  ->  probably \"{SuggestedModName}\"" :
+            $"{FolderName}  (no installed mod looks like this)";
+    }
+
     [AddINotifyPropertyChangedInterface]
     public class MaintenanceViewModel
     {
@@ -50,18 +62,111 @@ namespace Focus.Apps.EasyNpc.Maintenance
         public bool HasScannedUnusedMods { get; private set; }
         public string UnusedModsStatus { get; private set; } = string.Empty;
 
+        // Mugshot pack folders that don't correspond to any installed mod. This is the diagnostic for the single most
+        // common mugshot complaint ("all my mods load but every card is a silhouette"), which is almost always a name
+        // mismatch between the pack folder and the mod folder rather than anything being missing.
+        public ObservableCollection<UnmatchedMugshotFolder> UnmatchedMugshotFolders { get; } = new();
+        public bool HasScannedMugshots { get; private set; }
+        public string MugshotMatchStatus { get; private set; } = string.Empty;
+
+        private readonly IAppSettings appSettings;
         private readonly IModRepository modRepository;
         private readonly IReadOnlySet<IRecordKey> npcKeys;
         private readonly IProfileEventLog profileEventLog;
         private readonly Profile profile;
 
-        public MaintenanceViewModel(Profile profile, IProfileEventLog profileEventLog, IModRepository modRepository)
+        public MaintenanceViewModel(
+            Profile profile, IProfileEventLog profileEventLog, IModRepository modRepository, IAppSettings appSettings)
         {
+            this.appSettings = appSettings;
             this.profile = profile;
             this.profileEventLog = profileEventLog;
             this.modRepository = modRepository;
 
             npcKeys = profile.Npcs.Select(x => new RecordKey(x)).ToHashSet(RecordKeyComparer.Default);
+        }
+
+        // Compares the mugshot folders on disk against the installed mods, using the same normalized matching the
+        // gallery uses, and reports what's left over.
+        public void CheckMugshotMatching()
+        {
+            UnmatchedMugshotFolders.Clear();
+            HasScannedMugshots = true;
+            var mugshotsDirectory = !string.IsNullOrEmpty(appSettings.MugshotsDirectory) ?
+                appSettings.MugshotsDirectory : ProgramData.DefaultMugshotsPath;
+            if (!Directory.Exists(mugshotsDirectory))
+            {
+                MugshotMatchStatus =
+                    $"No mugshots folder found at {mugshotsDirectory}. Set the folder on the Settings page, or install " +
+                    "a mugshot pack.";
+                return;
+            }
+            var folderNames = Directory.EnumerateDirectories(mugshotsDirectory)
+                .Select(Path.GetFileName)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .Select(x => x!)
+                .ToList();
+            if (folderNames.Count == 0)
+            {
+                MugshotMatchStatus = $"The mugshots folder ({mugshotsDirectory}) is empty.";
+                return;
+            }
+            // Every name an installed mod answers to, keyed by its normalized form.
+            var modNamesByNormalized = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var mod in modRepository)
+                foreach (var name in mod.AllNames.Where(x => !string.IsNullOrEmpty(x)))
+                {
+                    var normalized = ModNameMatcher.Normalize(name);
+                    if (normalized.Length > 0 && !modNamesByNormalized.ContainsKey(normalized))
+                        modNamesByNormalized[normalized] = mod.Name;
+                }
+            var synonyms = appSettings.MugshotRedirects
+                .Select(x => x.Mugshots)
+                .Where(x => !string.IsNullOrEmpty(x))
+                .ToHashSet(StringComparer.CurrentCultureIgnoreCase);
+            var unmatched = folderNames
+                .Where(folder => !synonyms.Contains(folder))
+                .Where(folder => !modNamesByNormalized.ContainsKey(ModNameMatcher.Normalize(folder)))
+                .OrderBy(x => x, StringComparer.CurrentCultureIgnoreCase)
+                .Select(folder => new UnmatchedMugshotFolder
+                {
+                    FolderName = folder,
+                    SuggestedModName = FindClosestModName(folder, modNamesByNormalized),
+                })
+                .ToList();
+            foreach (var entry in unmatched)
+                UnmatchedMugshotFolders.Add(entry);
+            var matchedCount = folderNames.Count - unmatched.Count;
+            MugshotMatchStatus = unmatched.Count == 0
+                ? $"All {folderNames.Count} mugshot folder(s) match an installed mod."
+                : $"{matchedCount} of {folderNames.Count} mugshot folder(s) match an installed mod. The rest are listed " +
+                  "below - either the mod isn't installed, or its folder is named differently. Add a synonym on the " +
+                  "Settings page (\"Use Previews For\") to link a mismatched pair.";
+        }
+
+        // A cheap "did you mean" - the installed mod whose normalized name shares the most leading words with the
+        // folder. Only used as a hint next to the folder name, never to match automatically.
+        private static string? FindClosestModName(string folderName, IReadOnlyDictionary<string, string> modNames)
+        {
+            var folderWords = ModNameMatcher.Normalize(folderName).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (folderWords.Length == 0)
+                return null;
+            string? best = null;
+            var bestScore = 0;
+            foreach (var (normalized, displayName) in modNames)
+            {
+                var modWords = normalized.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                var score = 0;
+                while (score < folderWords.Length && score < modWords.Length && folderWords[score] == modWords[score])
+                    score++;
+                if (score > bestScore)
+                {
+                    bestScore = score;
+                    best = displayName;
+                }
+            }
+            // One word in common is noise ("Pandorable's", "Skyrim"); two is a signal worth showing.
+            return bestScore >= 2 ? best : null;
         }
 
         // Lists mods that provide a face for some NPC but were never chosen. A mod is only listed when NONE of its

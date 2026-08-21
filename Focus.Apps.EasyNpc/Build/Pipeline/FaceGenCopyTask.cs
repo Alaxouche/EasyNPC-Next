@@ -52,7 +52,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                 var meshPaths = new List<string>();
                 var tintPaths = new List<string>();
                 var failedPaths = new List<string>();
-                var found = settings.Profile.Npcs
+                var found = settings.IncludedNpcs
                     .AsParallel()
                     // Skip a facegen only when the chosen face itself inherits traits (chargen data then comes from the
                     // template). Keying this off the face plugin, not the default, keeps overhauled guards from going

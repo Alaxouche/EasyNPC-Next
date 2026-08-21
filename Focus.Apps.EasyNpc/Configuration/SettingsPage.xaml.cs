@@ -55,6 +55,11 @@ namespace Focus.Apps.EasyNpc.Configuration
             BuildWarningWhitelistGrid.CancelEdit();
         }
 
+        private void GameDataDirSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.SelectGameDataDirectory(Window.GetWindow(this));
+        }
+
         private void ModRootDirSelectButton_Click(object sender, RoutedEventArgs e)
         {
             Model.SelectModRootDirectory(Window.GetWindow(this));

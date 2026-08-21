@@ -30,6 +30,12 @@ namespace Focus.Apps.EasyNpc.Maintenance
             Task.Run(() => model?.DeleteOldLogFiles());
         }
 
+        private void CheckMugshotsButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Enumerating one directory and comparing names in memory - fast enough not to need a background task.
+            Model?.CheckMugshotMatching();
+        }
+
         private void FindUnusedModsButton_Click(object sender, RoutedEventArgs e)
         {
             // Runs on the UI thread: it updates a bound collection, and the lookups are in-memory (fast).

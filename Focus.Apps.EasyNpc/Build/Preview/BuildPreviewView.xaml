@@ -640,6 +640,30 @@
                                         </ContentControl.ToolTip>
                                     </ContentControl>
                                 </ui:SimpleStackPanel>
+                                <ui:SimpleStackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                                    <CheckBox IsChecked="{Binding Output.CustomizedNpcsOnly}">
+                                        Only merge NPCs I customized (EXPERIMENTAL)
+                                    </CheckBox>
+                                    <ContentControl Style="{StaticResource HelpIconStyle}" Margin="4,0,0,0">
+                                        <ContentControl.ToolTip>
+                                            <TextBlock MaxWidth="460" TextWrapping="Wrap">
+                                                Merges only the NPCs whose Default or Face Plugin you actually chose - the ones that differ from what your load order
+                                                would do on its own - instead of every NPC in the profile. The result is a far smaller plugin with far fewer masters,
+                                                which is what you want when you only care about a handful of NPCs.
+                                                <LineBreak/><LineBreak/>
+                                                Template-based NPCs (guards and other generics) are always included even when you didn't touch them, because the merge
+                                                repairs their inherited FaceGen - leaving them out would bring back invisible guard heads.
+                                                <LineBreak/><LineBreak/>
+                                                EXPERIMENTAL: with this on, the merge no longer resolves conflicts for the NPCs it leaves out, so any blackface those
+                                                NPCs already had stays. Leave it off for a normal full merge.
+                                            </TextBlock>
+                                        </ContentControl.ToolTip>
+                                    </ContentControl>
+                                </ui:SimpleStackPanel>
+                                <TextBlock Foreground="{StaticResource MutedTextBrush}" Style="{StaticResource CaptionTextBlockStyle}" Margin="24,0,0,0">
+                                    <Run Text="{Binding Output.IncludedNpcCount, Mode=OneWay}" d:Text="23"/> of
+                                    <Run Text="{Binding Output.TotalNpcCount, Mode=OneWay}" d:Text="4239"/> NPCs will be merged.
+                                </TextBlock>
                                 <TextBlock Text="Texture path extraction timeout (seconds, per file)" Style="{StaticResource LoweredFormLabelStyle}"/>
                                 <ui:SimpleStackPanel Orientation="Horizontal">
                                     <ui:NumberBox Width="100" Value="{Binding Output.TexturePathExtractionTimeoutSec}" Minimum="0" Maximum="300" SpinButtonPlacementMode="Compact"/>

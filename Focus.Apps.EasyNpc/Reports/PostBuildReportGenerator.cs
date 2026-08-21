@@ -40,7 +40,12 @@ namespace Focus.Apps.EasyNpc.Reports
         private readonly BehaviorSubject<string> status = new("Waiting to start");
 
         private Dictionary<IRecordKey, HeadPartAnalysis> headParts = new();
-        private readonly ModComponentInfo vanillaComponent;
+        private readonly Lazy<ModComponentInfo> vanillaComponent;
+
+        // The one true data directory: the folder the file providers actually read from. IGameSetup.DataDirectory is
+        // the raw path the app was pointed at, which may be the game root rather than its "data" subfolder. Mixing the
+        // two made the verifier enumerate the wrong folder and report the merge plugin and every archive as missing.
+        private string DataDirectory => gameSettings.Value.DataDirectory;
 
         public PostBuildReportGenerator(
             IConfigurableModRepository<ComponentPerDirectoryConfiguration> modRepository, IModSettings modSettings,
@@ -57,7 +62,9 @@ namespace Focus.Apps.EasyNpc.Reports
             this.setup = setup;
 
             archiveIndex = new(archiveProvider);
-            vanillaComponent = new ModComponentInfo(ModLocatorKey.Empty, "Vanilla", "Vanilla", setup.DataDirectory);
+            // Lazy, because game settings depend on the environment, which isn't confirmed until the report runs.
+            vanillaComponent = new(() =>
+                new ModComponentInfo(ModLocatorKey.Empty, "Vanilla", "Vanilla", DataDirectory));
         }
 
         public async Task<PostBuildReport> CreateReport()
@@ -78,7 +85,7 @@ namespace Focus.Apps.EasyNpc.Reports
             var archiveIndexTask = Task.Run(() =>
             {
                 var archivePaths = gameSettings.Value.ArchiveOrder
-                    .Select(f => fs.Path.Combine(gameSettings.Value.DataDirectory, f));
+                    .Select(f => fs.Path.Combine(DataDirectory, f));
                 archiveIndex.AddArchives(archivePaths);
             });
             // Start the analysis right away so we can do other things while it's running.
@@ -125,7 +132,7 @@ namespace Focus.Apps.EasyNpc.Reports
                 $@"^{fs.Path.GetFileNameWithoutExtension(mainPluginName)}( - Textures)?\d*$", RegexOptions.Compiled);
             var archiveFilePaths = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
             var pluginFilePaths = new Dictionary<string, string>(StringComparer.CurrentCultureIgnoreCase);
-            foreach (var fileName in fs.Directory.EnumerateFiles(setup.DataDirectory))
+            foreach (var fileName in fs.Directory.EnumerateFiles(DataDirectory))
             {
                 var baseName = fs.Path.GetFileNameWithoutExtension(fileName);
                 if (!regex.IsMatch(baseName))
@@ -193,6 +200,16 @@ namespace Focus.Apps.EasyNpc.Reports
                     .Select(x => fs.Path.Combine(mergeComponent.Path, x.RelativePath))
                     .FirstOrDefault();
             }
+            // Did the merge itself ship a FaceGen for this NPC? The build only writes one when the NPC's face plugin
+            // differs from its default plugin - i.e. when the face was actually changed. For every other NPC the merge
+            // deliberately leaves the face alone, so whichever FaceGen wins comes from the load order exactly as it
+            // did before the build, and the merge cannot be "conflicting" with it.
+            var isFaceGenProvidedByMerge =
+                !string.IsNullOrEmpty(faceGenArchivePath) || !string.IsNullOrEmpty(faceGenLoosePath);
+            // The actionable case: the merge shipped a FaceGen for this NPC, but a different mod's copy wins (usually
+            // loose files beating the merged BSA), or the merged file isn't reachable at all.
+            var hasFaceGenOverrideConflict = isFaceGenProvidedByMerge && mergeComponent is not null &&
+                faceGenSource?.ModComponent != mergeComponent;
             return new NpcConsistencyInfo
             {
                 BasePluginName = chain.Key.BasePluginName,
@@ -203,10 +220,14 @@ namespace Focus.Apps.EasyNpc.Reports
                 FaceTintArchivePath = faceTintArchivePath,
                 FaceTintLoosePath = faceTintLoosePath,
                 HasConsistentFaceTint =
-                    // Don't care about the face tint unless EasyNPC is (or could be) providing the facegen.
-                    string.IsNullOrEmpty(faceGenArchivePath) || string.IsNullOrEmpty(faceGenLoosePath) ||
+                    // Don't care about the face tint unless EasyNPC is providing the facegen. This used to be an "or"
+                    // of the two emptiness checks, which is always true (a loose build never has an archive path, an
+                    // archived build never has a loose one), so the whole tint check silently never ran.
+                    !isFaceGenProvidedByMerge ||
                     faceTintSource?.ModComponent == faceGenSource?.ModComponent,
                 HasConsistentHeadParts = await HasConsistentHeadParts(winner, pluginSource, faceGenSource),
+                HasFaceGenOverrideConflict = hasFaceGenOverrideConflict,
+                IsFaceGenProvidedByMerge = isFaceGenProvidedByMerge,
                 Name = chain.Winner.Name,
                 WinningPluginName = winningPluginName,
                 WinningPluginSource = pluginSource,
@@ -269,7 +290,7 @@ namespace Focus.Apps.EasyNpc.Reports
                     return new AssetSource
                     {
                         ArchiveName = containingArchiveName,
-                        ModComponent = vanillaComponent,
+                        ModComponent = vanillaComponent.Value,
                         RelativePath = assetPath,
                     };
                 var archiveSource = archiveSources.GetOrAdd(
@@ -314,7 +335,7 @@ namespace Focus.Apps.EasyNpc.Reports
             // Checking the data directory to see if a plugin is present is more reliable than checking the load order.
             // There may be a bad plugins.txt referencing plugins that don't exist, especially if e.g. the data
             // directory is configured incorrectly.
-            var path = fs.Path.Combine(setup.DataDirectory, fileName);
+            var path = fs.Path.Combine(DataDirectory, fileName);
             if (!fs.File.Exists(path))
                 return PluginState.Missing;
             if (!setup.LoadOrderGraph.IsEnabled(fileName))

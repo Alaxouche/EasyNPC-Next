@@ -34,6 +34,25 @@ namespace Focus.Apps.EasyNpc.Configuration
             set => enableOnlineMugshots.OnNext(value);
         }
 
+        // Explicit game data folder, used when automatic detection fails or picks the wrong install (Linux/Proton,
+        // portable copies, several editions side by side). The "-p" command line option still wins over this, so mod
+        // manager setups that already pass a path keep working unchanged. Empty means "detect automatically".
+        public string GameDataDirectory
+        {
+            get => gameDataDirectory.Value;
+            set => gameDataDirectory.OnNext(value);
+        }
+
+        // Which distribution of the game to read the load order from. Empty means "detect automatically". This maps to
+        // a Mutagen GameRelease ("SkyrimSE", "SkyrimSEGog", ...) and matters because each edition keeps its own
+        // plugins.txt in a different folder under %LocalAppData% - a GOG install read as "SkyrimSE" silently uses the
+        // Steam edition's plugins.txt.
+        public string GameRelease
+        {
+            get => gameRelease.Value;
+            set => gameRelease.OnNext(value);
+        }
+
         public bool IncludeChildNpcs
         {
             get => includeChildNpcs.Value;
@@ -77,6 +96,8 @@ namespace Focus.Apps.EasyNpc.Configuration
             buildWarningWhitelist;
         public IObservable<string> DefaultModRootDirectoryObservable => defaultModRootDirectory;
         public IObservable<bool> EnableOnlineMugshotsObservable => enableOnlineMugshots;
+        public IObservable<string> GameDataDirectoryObservable => gameDataDirectory;
+        public IObservable<string> GameReleaseObservable => gameRelease;
         public IObservable<bool> IncludeChildNpcsObservable => includeChildNpcs;
         public IObservable<IReadOnlyList<MugshotRedirect>> MugshotRedirectsObservable => mugshotRedirects;
         public IObservable<string> MugshotsDirectoryObservable => mugshotsDirectory;
@@ -91,6 +112,8 @@ namespace Focus.Apps.EasyNpc.Configuration
             new(new List<BuildWarningSuppression>());
         private readonly BehaviorSubject<string> defaultModRootDirectory = new(string.Empty);
         private readonly BehaviorSubject<bool> enableOnlineMugshots = new(true);
+        private readonly BehaviorSubject<string> gameDataDirectory = new(string.Empty);
+        private readonly BehaviorSubject<string> gameRelease = new(string.Empty);
         private readonly BehaviorSubject<bool> includeChildNpcs = new(false);
         private readonly BehaviorSubject<string> theme = new("System");
         private readonly BehaviorSubject<IReadOnlyList<MugshotRedirect>> mugshotRedirects =
@@ -123,6 +146,8 @@ namespace Focus.Apps.EasyNpc.Configuration
             {
                 BuildWarningWhitelist = BuildWarningWhitelist,
                 EnableOnlineMugshots = EnableOnlineMugshots,
+                GameDataDirectory = GameDataDirectory,
+                GameRelease = GameRelease,
                 IncludeChildNpcs = IncludeChildNpcs,
                 ModRootDirectory = DefaultModRootDirectory,
                 MugshotRedirects = MugshotRedirects,
@@ -140,6 +165,10 @@ namespace Focus.Apps.EasyNpc.Configuration
                 BuildWarningWhitelist = data.BuildWarningWhitelist;
             if (data.EnableOnlineMugshots.HasValue)
                 EnableOnlineMugshots = data.EnableOnlineMugshots.Value;
+            if (!string.IsNullOrEmpty(data.GameDataDirectory))
+                GameDataDirectory = data.GameDataDirectory;
+            if (!string.IsNullOrEmpty(data.GameRelease))
+                GameRelease = data.GameRelease;
             if (data.IncludeChildNpcs.HasValue)
                 IncludeChildNpcs = data.IncludeChildNpcs.Value;
             if (!string.IsNullOrEmpty(data.Theme))
@@ -270,6 +299,8 @@ namespace Focus.Apps.EasyNpc.Configuration
 
         public IReadOnlyList<BuildWarningSuppression>? BuildWarningWhitelist { get; set; }
         public bool? EnableOnlineMugshots { get; set; }
+        public string? GameDataDirectory { get; set; }
+        public string? GameRelease { get; set; }
         public bool? IncludeChildNpcs { get; set; }
         public string? ModRootDirectory { get; set; }
         public IReadOnlyList<MugshotRedirect>? MugshotRedirects { get; set; }

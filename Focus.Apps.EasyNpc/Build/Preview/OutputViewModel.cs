@@ -66,6 +66,21 @@ namespace Focus.Apps.EasyNpc.Build.Preview
             set => maxNpcsPerPlugin.OnNext(value);
         }
 
+        // Restricts the merge to NPCs you actually customized (plus template-based NPCs, which the merge repairs
+        // regardless). Answers the recurring "I only want to patch about 20 NPCs, not all of them" request.
+        public bool CustomizedNpcsOnly
+        {
+            get => customizedNpcsOnly.Value;
+            set => customizedNpcsOnly.OnNext(value);
+        }
+
+        // How many NPCs each setting would actually merge, so the trade-off is visible before building rather than
+        // discovered afterwards in xEdit.
+        public int TotalNpcCount => profile.Count;
+        [DependsOn(nameof(CustomizedNpcsOnly))]
+        public int IncludedNpcCount => CustomizedNpcsOnly ?
+            profile.Npcs.Count(x => x.IsCustomized || x.IsTemplated) : profile.Count;
+
         public bool IsExistingMod { get; private set; }
         public bool IsValidDirectory { get; private set; }
 
@@ -101,6 +116,7 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         private readonly BehaviorSubject<bool> keepFaceGenOutsideArchive = new(false);
         private readonly BehaviorSubject<bool> forwardCustomRaces = new(false);
         private readonly BehaviorSubject<int> maxNpcsPerPlugin = new(0);
+        private readonly BehaviorSubject<bool> customizedNpcsOnly = new(false);
         private readonly IFileSystem fs;
         private readonly BehaviorSubject<string> modName = new($"NPC Merge {DateTime.Now:yyyy-MM-dd}");
         private readonly BehaviorSubject<ErrorLevel> overallErrorLevel = new(ErrorLevel.None);
@@ -115,7 +131,7 @@ namespace Focus.Apps.EasyNpc.Build.Preview
                 .CombineLatest(
                     modSettings.RootDirectoryObservable, modName, enableArchiving, enableDewiggify,
                     texturePathExtractionTimeoutSec, generateRsvExclusions, keepFaceGenOutsideArchive,
-                    forwardCustomRaces, maxNpcsPerPlugin, GetBuildSettings);
+                    forwardCustomRaces, maxNpcsPerPlugin, customizedNpcsOnly, GetBuildSettings);
             BuildSettings.SubscribeSafe(log, settings =>
             {
                 IsExistingMod = IsOutputDirectoryNonEmpty(settings);
@@ -127,7 +143,7 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         private BuildSettings GetBuildSettings(
             string modRootDirectory, string outputModName, bool enableArchiving,
             bool enableDewiggify, int texturePathExtractionTimeoutSec, bool generateRsvExclusions,
-            bool keepFaceGenOutsideArchive, bool forwardCustomRaces, int maxNpcsPerPlugin)
+            bool keepFaceGenOutsideArchive, bool forwardCustomRaces, int maxNpcsPerPlugin, bool customizedNpcsOnly)
         {
             outputModName = outputModName ?? "";
             var outputDirectory = Path.Combine(modRootDirectory, outputModName);
@@ -139,6 +155,7 @@ namespace Focus.Apps.EasyNpc.Build.Preview
                 KeepFaceGenOutsideArchive = keepFaceGenOutsideArchive,
                 ForwardCustomRaces = forwardCustomRaces,
                 MaxNpcsPerPlugin = maxNpcsPerPlugin,
+                NpcInclusion = customizedNpcsOnly ? NpcInclusion.CustomizedOnly : NpcInclusion.All,
                 TextureExtractionTimeoutSec = texturePathExtractionTimeoutSec,
             };
         }

@@ -53,13 +53,15 @@ namespace Focus.Providers.Mutagen.Tests
         {
             // The archive order is built by hand (Mutagen's own archive sort crashes in 0.53). Only archives that
             // actually exist in the data folder are included: ini-listed base archives first, then each plugin's
-            // "<name>.bsa" and "<name> - Textures.bsa" in load order.
+            // "<name>.bsa" and "<name> - Textures.bsa" in load order, and finally any archive whose name doesn't
+            // follow the "<plugin>.bsa" convention - those are still real content, so leaving them out made their
+            // textures and meshes look "missing" during a build.
             foreach (var name in new[]
             {
                 "ini1.bsa", "ini2.bsa",
                 "plugin1.bsa", "plugin1 - Textures.bsa",
                 "plugin2.bsa",
-                // plugin3 has no archives on disk, so it should be skipped entirely.
+                // plugin3 has no archives on disk, so it contributes nothing.
                 "unrelated.bsa",
             })
             {
@@ -69,7 +71,10 @@ namespace Focus.Providers.Mutagen.Tests
             var archiveOrder = settings.ArchiveOrder.ToList();
 
             Assert.Equal(
-                new[] { "ini1.bsa", "ini2.bsa", "plugin1.bsa", "plugin1 - Textures.bsa", "plugin2.bsa" },
+                new[]
+                {
+                    "ini1.bsa", "ini2.bsa", "plugin1.bsa", "plugin1 - Textures.bsa", "plugin2.bsa", "unrelated.bsa",
+                },
                 archiveOrder);
         }
 

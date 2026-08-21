@@ -38,7 +38,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                 return new Result { ExcludedNpcCount = 0 };
 
             // NPCs given a non-vanilla face or a facegen override.
-            var npcs = settings.Profile.Npcs
+            var npcs = settings.IncludedNpcs
                 .Where(npc => !npc.FaceOption.IsBaseGame || npc.FaceGenOverride is not null)
                 .OrderBy(npc => npc.BasePluginName, StringComparer.CurrentCultureIgnoreCase)
                 .ThenBy(npc => npc.LocalFormIdHex, StringComparer.OrdinalIgnoreCase)

@@ -1,4 +1,5 @@
-﻿using System;
+using PropertyChanged;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -47,12 +48,19 @@ namespace Focus.Apps.EasyNpc.Main
         public string ExtensionUrl { get; private init; } = "https://www.nexusmods.com/site/mods/265";
     }
 
+    [AddINotifyPropertyChangedInterface]
     public class MissingGameDataContent
     {
         public string GameId { get; init; } = "SkyrimSE";
         public string GameName { get; init; }  = "Skyrim Special Edition";
         public string IssuesUrl { get; private init; } = "https://github.com/focustense/easymod/labels/gamefinder";
         public string SupportedDistributionsUrl { get; private init; } = "https://github.com/erri120/GameFinder#gamefinder";
+
+        // Set once the user picks a folder, so the dialog can confirm what was saved instead of leaving them guessing.
+        public string SelectionResult { get; set; } = string.Empty;
+        public bool IsSelectionSuccessful { get; set; }
+        [DependsOn(nameof(SelectionResult))]
+        public bool HasSelectionResult => !string.IsNullOrEmpty(SelectionResult);
 
         public MissingGameDataContent()
         {

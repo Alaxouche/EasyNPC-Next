@@ -10,6 +10,10 @@ namespace Focus.Apps.EasyNpc.Configuration
         string DefaultModRootDirectory { get; }
         // Fetches missing mugshots from the online NPC Face Finder API. On by default.
         bool EnableOnlineMugshots { get; }
+        // Explicit game data folder (empty = auto-detect). The "-p" command line option takes priority over it.
+        string GameDataDirectory { get; }
+        // Mutagen GameRelease name, e.g. "SkyrimSE" or "SkyrimSEGog" (empty = auto-detect).
+        string GameRelease { get; }
         // Experimental: includes child NPCs in the profile so child overhauls can be merged. Off by default.
         bool IncludeChildNpcs { get; }
         IEnumerable<MugshotRedirect> MugshotRedirects { get; }
@@ -26,6 +30,8 @@ namespace Focus.Apps.EasyNpc.Configuration
         IReadOnlyList<BuildWarningSuppression> BuildWarningWhitelist { get; set; }
         string DefaultModRootDirectory { get; set; }
         bool EnableOnlineMugshots { get; set; }
+        string GameDataDirectory { get; set; }
+        string GameRelease { get; set; }
         bool IncludeChildNpcs { get; set; }
         IReadOnlyList<MugshotRedirect> MugshotRedirects { get; set; }
         string MugshotsDirectory { get; set; }
@@ -40,6 +46,8 @@ namespace Focus.Apps.EasyNpc.Configuration
         IObservable<IReadOnlyList<BuildWarningSuppression>> BuildWarningWhitelistObservable { get; }
         IObservable<string> DefaultModRootDirectoryObservable { get; }
         IObservable<bool> EnableOnlineMugshotsObservable { get; }
+        IObservable<string> GameDataDirectoryObservable { get; }
+        IObservable<string> GameReleaseObservable { get; }
         IObservable<bool> IncludeChildNpcsObservable { get; }
         IObservable<IReadOnlyList<MugshotRedirect>> MugshotRedirectsObservable { get; }
         IObservable<string> MugshotsDirectoryObservable { get; }

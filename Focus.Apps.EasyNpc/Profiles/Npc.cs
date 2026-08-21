@@ -25,6 +25,8 @@ namespace Focus.Apps.EasyNpc.Profiles
         bool HasAvailableModdedFaceGens { get; }
         bool HasMissingPlugins { get; }
         bool HasUnmodifiedFaceTemplate { get; }
+        bool IsCustomized { get; }
+        bool IsTemplated { get; }
         string? MissingDefaultPluginName { get; }
         string? MissingFacePluginName { get; }
         IReadOnlyList<NpcOption> Options { get; }
@@ -67,7 +69,18 @@ namespace Focus.Apps.EasyNpc.Profiles
         public bool HasMissingPlugins =>
             !string.IsNullOrEmpty(MissingDefaultPluginName) || !string.IsNullOrEmpty(MissingFacePluginName);
         public bool HasUnmodifiedFaceTemplate { get; private init; }
+        // True when this NPC's setup differs from what the load order would produce on its own - i.e. the user (or
+        // auto-assign) picked a Default or Face plugin other than the winning override, or pinned a FaceGen mod.
+        // These are the NPCs a "changed only" build has to carry; for the rest the merge just restates what the game
+        // already loads.
+        public bool IsCustomized =>
+            !IsWinningPlugin(DefaultOption) || !IsWinningPlugin(FaceOption) || FaceGenOverride is not null;
         public bool IsFemale => records.Master.IsFemale;
+        // Template-based NPCs (guards and other generics) are the ones the merge repairs even when the user changed
+        // nothing: clearing the inherited "Traits" flag and giving them their own FaceGen is what stops them
+        // rendering invisible. A reduced build must keep them, or it reintroduces the very bug it fixed.
+        public bool IsTemplated =>
+            DefaultOption.Analysis.TemplateInfo is not null || FaceOption.Analysis.TemplateInfo is not null;
         public string? MissingDefaultPluginName { get; private set; }
         public string? MissingFacePluginName { get; private set; }
         public IReadOnlyList<NpcOption> Options { get; private init; }
@@ -117,6 +130,12 @@ namespace Focus.Apps.EasyNpc.Profiles
             var lastOption = Options[^1];
             defaultOption = new(lastOption);
             faceOption = new(lastOption);
+        }
+
+        // The winning override is the last plugin in the chain - what the game loads with no patch at all.
+        private bool IsWinningPlugin(NpcOption option)
+        {
+            return string.Equals(option.PluginName, Options[^1].PluginName, StringComparison.CurrentCultureIgnoreCase);
         }
 
         public void ApplyPolicy(bool resetDefaultPlugin = false, bool resetFacePlugin = false, bool alwaysLog = false)

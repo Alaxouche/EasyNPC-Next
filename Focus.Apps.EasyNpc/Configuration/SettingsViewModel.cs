@@ -58,6 +58,36 @@ namespace Focus.Apps.EasyNpc.Configuration
             }
         }
 
+        // Manual override for the game folder. Only read at startup, so there's nothing to broadcast on change - but
+        // it is validated immediately, because a wrong path here would otherwise only show up as a failed launch.
+        public string GameDataDirectory
+        {
+            get => settings.GameDataDirectory;
+            set
+            {
+                settings.GameDataDirectory = value ?? string.Empty;
+                settings.Save();
+            }
+        }
+
+        [DependsOn(nameof(GameDataDirectory))]
+        public string GameDataDirectoryWarning => GetGameDataDirectoryWarning();
+        [DependsOn(nameof(GameDataDirectory))]
+        public bool HasGameDataDirectoryWarning => !string.IsNullOrEmpty(GameDataDirectoryWarning);
+
+        public IReadOnlyList<GameEditionViewModel> AvailableGameEditions { get; } = GameEditionViewModel.All;
+
+        public GameEditionViewModel GameEdition
+        {
+            get => AvailableGameEditions.FirstOrDefault(x => x.Id == settings.GameRelease) ??
+                AvailableGameEditions[0];
+            set
+            {
+                settings.GameRelease = value?.Id ?? string.Empty;
+                settings.Save();
+            }
+        }
+
         public bool IncludeChildNpcs
         {
             get => settings.IncludeChildNpcs;
@@ -218,6 +248,13 @@ namespace Focus.Apps.EasyNpc.Configuration
             MugshotRedirects.Remove(redirect);
         }
 
+        public void SelectGameDataDirectory(Window owner)
+        {
+            const string description = "Select your game's Data folder (the one containing Skyrim.esm)";
+            if (SelectDirectory(owner, description, out string gameDataDirectory))
+                GameDataDirectory = gameDataDirectory;
+        }
+
         public void SelectModRootDirectory(Window owner)
         {
             const string description = "Select root directory where your individual mod directories are located";
@@ -258,6 +295,11 @@ namespace Focus.Apps.EasyNpc.Configuration
                 .ToList();
             settings.Save();
             messageBus.Send(new SettingsChanged(SettingsChanged.SettingKind.MugshotSynonyms));
+        }
+
+        private string GetGameDataDirectoryWarning()
+        {
+            return GameFolder.Validate(GameDataDirectory);
         }
 
         private bool SelectDirectory(Window owner, string description, out string selectedPath)

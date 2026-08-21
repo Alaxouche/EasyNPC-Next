@@ -4,7 +4,8 @@ using System.Windows.Controls;
 
 namespace Focus.Apps.EasyNpc.Reports
 {
-    public enum PostBuildReportSectionStatus { OK, Warning, Error }
+    // Info is deliberately neutral: a section that is purely informational must never read as a failure.
+    public enum PostBuildReportSectionStatus { OK, Info, Warning, Error }
 
     /// <summary>
     /// Interaction logic for PostBuildReportSection.xaml

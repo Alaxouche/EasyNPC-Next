@@ -27,9 +27,15 @@ namespace Focus.ModManagers
         }
     }
 
-    public class ModComponentInfo
+    // Components are compared by identity (owning mod + component id + directory), not by reference. Callers such as
+    // the post-build report build a component in one place (e.g. the synthetic "Vanilla" component) and compare it to
+    // one that came out of the mod repository; with reference equality those never match, which silently turned
+    // correct results into reported conflicts.
+    public class ModComponentInfo : IEquatable<ModComponentInfo>
     {
         public static readonly ModComponentInfo Invalid = new(ModLocatorKey.Empty, "", "", "");
+
+        private static readonly StringComparer stringComparer = StringComparer.CurrentCultureIgnoreCase;
 
         public IModLocatorKey ModKey { get; init; }
         public string Id { get; init; }
@@ -44,6 +50,46 @@ namespace Focus.ModManagers
             Name = name;
             Path = path;
             IsEnabled = isEnabled;
+        }
+
+        public bool Equals(ModComponentInfo? other)
+        {
+            if (ReferenceEquals(this, other))
+                return true;
+            if (other is null)
+                return false;
+            return
+                ModLocatorKeyComparer.Default.Equals(ModKey, other.ModKey) &&
+                stringComparer.Equals(Id, other.Id) &&
+                stringComparer.Equals(Path, other.Path);
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as ModComponentInfo);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(
+                ModLocatorKeyComparer.Default.GetHashCode(ModKey),
+                stringComparer.GetHashCode(Id),
+                stringComparer.GetHashCode(Path));
+        }
+
+        public override string ToString()
+        {
+            return !string.IsNullOrEmpty(Name) ? Name : Id;
+        }
+
+        public static bool operator ==(ModComponentInfo? x, ModComponentInfo? y)
+        {
+            return Equals(x, y);
+        }
+
+        public static bool operator !=(ModComponentInfo? x, ModComponentInfo? y)
+        {
+            return !Equals(x, y);
         }
     }
 

@@ -44,10 +44,10 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
         {
             return Task.Run(() =>
             {
-                ItemCount.OnNext(settings.Profile.Count);
+                ItemCount.OnNext(settings.IncludedNpcCount);
                 var npcs = new List<(Profiles.INpc model, NpcRecord record)>();
                 var skipped = new List<SkippedNpc>();
-                foreach (var npc in settings.Profile.Npcs)
+                foreach (var npc in settings.IncludedNpcs)
                 {
                     log.Debug("Importing default attributes for {npcLabel}", npc.DescriptiveLabel);
                     NextItem(npc.DescriptiveLabel);

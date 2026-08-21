@@ -55,6 +55,50 @@
                 <GroupBox Header="Paths">
                     <ui:SimpleStackPanel>
                         <TextBlock Style="{StaticResource FormLabelStyle}">
+                            Game Data Directory
+                            <TextBlock Foreground="{StaticResource MutedTextBrush}">(leave empty to detect automatically)</TextBlock>
+                        </TextBlock>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="48"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding GameDataDirectory, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0"/>
+                            <Button x:Name="GameDataDirSelectButton" Margin="8,0,0,0" Grid.Column="1" Click="GameDataDirSelectButton_Click">
+                                <fa5:SvgAwesome Icon="Regular_FolderOpen"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Foreground="{StaticResource DangerForegroundBrush}"
+                                   Text="{Binding GameDataDirectoryWarning, Mode=OneWay}"
+                                   Visibility="{Binding HasGameDataDirectoryWarning, Converter={StaticResource BoolToVisibility}}"/>
+                        <ui:SimpleStackPanel Orientation="Horizontal" Margin="0,4,0,0" Spacing="8">
+                            <TextBlock Style="{StaticResource FormLabelStyle}" VerticalAlignment="Center" Text="Game Edition"/>
+                            <ComboBox ItemsSource="{Binding AvailableGameEditions, Mode=OneWay}"
+                                      SelectedItem="{Binding GameEdition}"
+                                      DisplayMemberPath="Name"
+                                      MinWidth="240"/>
+                            <ContentControl Style="{StaticResource HelpIconStyle}" VerticalAlignment="Center">
+                                <ContentControl.ToolTip>
+                                    <TextBlock MaxWidth="420" TextWrapping="Wrap">
+                                        Each store's edition of the game keeps its own <Run FontStyle="Italic">plugins.txt</Run> and
+                                        <Run FontStyle="Italic">loadorder.txt</Run> in a different folder. If you play the GOG version and see the Steam
+                                        version's load order (or none of your mods), pick the GOG edition here.
+                                        <LineBreak/><LineBreak/>
+                                        "Detect automatically" recognizes the edition from the game folder above, which is correct for almost everyone.
+                                        <LineBreak/><LineBreak/>
+                                        Changing this takes effect the next time you start the app.
+                                    </TextBlock>
+                                </ContentControl.ToolTip>
+                            </ContentControl>
+                        </ui:SimpleStackPanel>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,4,0,12"
+                                   Foreground="{StaticResource MutedTextBrush}">
+                            Point this at your game's <Run FontStyle="Italic">Data</Run> folder (the one containing Skyrim.esm) if the game can't be detected
+                            automatically - for example on Linux/Proton, a portable install, or a store that isn't recognized. A
+                            <Run FontFamily="Consolas">-p</Run> argument from your mod manager still takes priority. Takes effect on the next start.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource FormLabelStyle}">
                             Mod Root Directory
                             <TextBlock Visibility="{Binding UseModManagerForModDirectory, Converter={StaticResource BoolToVisibility}}">(Default)</TextBlock>
                         </TextBlock>
@@ -262,7 +306,12 @@
                         </ui:SimpleStackPanel>
                     </ui:SimpleStackPanel>
                 </GroupBox>
-                <GroupBox Header="Online mugshots (NPC Face Finder)" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                <!--
+                    Deliberately shown on the welcome screen too. This is the one feature that sends anything off the
+                    user's machine, and it ships on by default; the first launch is where they should be told, not a
+                    settings page they may never open.
+                -->
+                <GroupBox Header="Online mugshots (NPC Face Finder)">
                     <ui:SimpleStackPanel>
                         <CheckBox IsChecked="{Binding EnableOnlineMugshots}"
                                   Content="Fetch missing mugshots from NPC Face Finder"/>
@@ -271,16 +320,24 @@
                             Fills in mugshots for installed mods that don't have a local pack by downloading them from
                             the NPC Face Finder online database. On by default.
                         </TextBlock>
+                        <TextBlock Style="{StaticResource ParagraphStyle}" Foreground="{StaticResource MutedTextBrush}"
+                                   TextWrapping="Wrap" Margin="28,4,0,0">
+                            <Run FontWeight="SemiBold">What leaves your PC:</Run> the form ID of the NPC you're looking at
+                            (e.g. <Run FontFamily="Consolas">0001A696:Skyrim.esm</Run>) so the site can return faces for it.
+                            No account, no mod list, and nothing about you is sent. Turn this off to keep the app fully offline.
+                        </TextBlock>
                         <TextBlock Style="{StaticResource ParagraphStyle}" TextWrapping="Wrap" Margin="28,0,0,0">
                             Faces provided by <Hyperlink NavigateUri="https://npcfacefinder.com"
                                 RequestNavigate="Hyperlink_RequestNavigate">NPC Face Finder</Hyperlink>.
                         </TextBlock>
                         <TextBlock Style="{StaticResource ParagraphStyle}" Foreground="{StaticResource MutedTextBrush}"
-                                   TextWrapping="Wrap" Margin="0,8,0,0">
+                                   TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
                             Downloaded mugshots are cached on disk so revisiting an NPC is instant. Clear the cache to
                             reclaim space or force a fresh download - images come back on demand.
                         </TextBlock>
-                        <ui:SimpleStackPanel Orientation="Horizontal" Margin="0,8,0,0">
+                        <ui:SimpleStackPanel Orientation="Horizontal" Margin="0,8,0,0"
+                                             Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
                             <Button Content="Clear online mugshot cache" Click="ClearFaceFinderCache_Click"/>
                             <TextBlock Text="{Binding FaceFinderCacheStatus}" VerticalAlignment="Center" Margin="12,0,0,0"
                                        Foreground="{StaticResource MutedTextBrush}"/>

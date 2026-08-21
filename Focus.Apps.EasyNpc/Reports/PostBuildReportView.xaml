@@ -16,14 +16,32 @@
     <DockPanel>
         <!-- Header, matching the EasyNPC Next wordmark: accent bar, masks-with-check emblem, title, version badge. -->
         <DockPanel DockPanel.Dock="Top" Margin="0,0,0,16">
-            <Button x:Name="RerunButton" DockPanel.Dock="Right" VerticalAlignment="Center"
-                    IsEnabled="{Binding IsReportReady}" Click="RerunButton_Click"
-                    ToolTip="Re-run the checks (reuses the loaded game data, so it's quick)">
-                <ui:SimpleStackPanel Orientation="Horizontal">
-                    <fa:SvgAwesome Icon="Solid_Redo" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                    <TextBlock Text="Re-run" VerticalAlignment="Center"/>
-                </ui:SimpleStackPanel>
-            </Button>
+            <ui:SimpleStackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <Button x:Name="ExportButton"
+                        IsEnabled="{Binding IsReportReady}" Click="ExportButton_Click"
+                        ToolTip="Save this report as a text file you can attach to a bug report">
+                    <ui:SimpleStackPanel Orientation="Horizontal">
+                        <fa:SvgAwesome Icon="Solid_FileExport" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Export" VerticalAlignment="Center"/>
+                    </ui:SimpleStackPanel>
+                </Button>
+                <Button x:Name="CopyButton"
+                        IsEnabled="{Binding IsReportReady}" Click="CopyButton_Click"
+                        ToolTip="Copy this report to the clipboard">
+                    <ui:SimpleStackPanel Orientation="Horizontal">
+                        <fa:SvgAwesome Icon="Solid_Copy" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Copy" VerticalAlignment="Center"/>
+                    </ui:SimpleStackPanel>
+                </Button>
+                <Button x:Name="RerunButton"
+                        IsEnabled="{Binding IsReportReady}" Click="RerunButton_Click"
+                        ToolTip="Re-run the checks (reuses the loaded game data, so it's quick)">
+                    <ui:SimpleStackPanel Orientation="Horizontal">
+                        <fa:SvgAwesome Icon="Solid_Redo" Width="14" Height="14" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                        <TextBlock Text="Re-run" VerticalAlignment="Center"/>
+                    </ui:SimpleStackPanel>
+                </Button>
+            </ui:SimpleStackPanel>
             <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                 <Border Width="4" CornerRadius="2" Margin="0,2,14,2"
                         Background="{DynamicResource SystemControlHighlightAccentBrush}"/>
@@ -127,6 +145,16 @@
                             </TextBlock.Style>
                         </TextBlock>
                         <TextBlock Text="Tint mismatches" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                    </StackPanel>
+                </Border>
+                <!-- Informational only: FaceGen/record mismatches the merge didn't create and can't fix. Never red. -->
+                <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="8" Padding="16,10" MinWidth="120"
+                        ToolTip="NPCs whose face EasyNPC left untouched, but whose FaceGen doesn't match their record. This comes from the source mods and exists with or without EasyNPC."
+                        Visibility="{Binding HasInheritedFaceGenMismatches, Converter={StaticResource BoolToVisibility}}">
+                    <StackPanel>
+                        <TextBlock Text="{Binding InheritedFaceGenMismatchCount, Mode=OneWay}" d:Text="7" FontSize="22"
+                                   FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
+                        <TextBlock Text="Inherited (info)" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
                     </StackPanel>
                 </Border>
             </ui:SimpleStackPanel>
@@ -383,15 +411,18 @@
                             <TextBlock Foreground="{StaticResource MutedTextBrush}"
                                        Style="{StaticResource BodyTextBlockStyle}"
                                        Visibility="{Binding HasConsistentFaceGens, Converter={StaticResource BoolToVisibility}}">
-                                All FaceGen files appear consistent with NPC records.
+                                Every face <Run Text="{StaticResource AppName}"/> merged is the one the game will load.
                             </TextBlock>
                             <TextBlock Foreground="{StaticResource MutedTextBrush}"
                                        Style="{StaticResource BodyTextBlockStyle}"
                                        Visibility="{Binding HasConsistentFaceGens, Converter={StaticResource InvBoolToVisibility}}">
-                                Some NPCs have FaceGen conflicts, and will have blackface or other glitches. This happens when <Run Text="{StaticResource AppName}"/>
-                                is inconsistently overridden by another mod, usually with loose files, which take precedence over any merged BSAs even if
+                                For the NPCs below, <Run Text="{StaticResource AppName}"/> wrote a FaceGen into its output mod, but that is
+                                <Run FontStyle="Italic">not</Run> the FaceGen the game will load - so these NPCs will show blackface or other glitches.
+                                This happens when another mod overrides the merge, usually with loose files, which take precedence over any merged BSA even if
                                 <Run FontWeight="SemiBold" Text="{Binding Report.MainPluginName}" d:Text="NPC Appearances Merged.esp"/> is last in the plugin order.
-                                To resolve this, <Run FontWeight="SemiBold">disable the conflicting mods in your mod manager</Run>.
+                                To resolve it, <Run FontWeight="SemiBold">give the </Run><Run FontWeight="SemiBold" Text="{StaticResource AppName}"/><Run
+                                FontWeight="SemiBold"> output mod higher priority than the mod listed under "Actual FaceGen Mod"</Run>, or extract the merged
+                                files loose using the button below.
                             </TextBlock>
                             <ContentControl Visibility="{Binding CanExtractFaceGenFiles, Converter={StaticResource BoolToVisibility}}">
                                 <rpt:ArchiveExtractorView DataContext="{Binding FaceGenArchiveExtractor}"/>
@@ -499,6 +530,69 @@
                                     <DataGridTextColumn Binding="{Binding WinningFaceTintSource.ModComponent.Name}"
                                                         CellStyle="{StaticResource TooltipCellStyle}"
                                                         Header="FaceTint Mod"
+                                                        Width="200"/>
+                                </DataGrid.Columns>
+                            </DataGrid>
+                        </ui:SimpleStackPanel>
+                    </rpt:PostBuildReportSection>
+                    <!--
+                        Informational section. These NPCs keep the face they already had - EasyNPC wrote no FaceGen for
+                        them - so the mismatch between their record and their FaceGen comes from the source mods and is
+                        present with or without a merge. Reporting it as a conflict (and advising users to disable the
+                        "conflicting" mod, which is usually USSEP) caused people to break working setups.
+                    -->
+                    <rpt:PostBuildReportSection DefaultText="No inherited FaceGen mismatches"
+                                                ErrorText="Inherited FaceGen mismatches (not caused by the merge)"
+                                                Status="Info"
+                                                Visibility="{Binding HasInheritedFaceGenMismatches, Converter={StaticResource BoolToVisibility}}">
+                        <ui:SimpleStackPanel>
+                            <TextBlock Foreground="{StaticResource MutedTextBrush}"
+                                       Style="{StaticResource BodyTextBlockStyle}">
+                                <Run Text="{StaticResource AppName}"/> left these NPCs' faces alone - their Face Plugin is also their Default Plugin, so no
+                                FaceGen was merged for them. Their record and the FaceGen they inherit don't match, but that is true with or without
+                                <Run Text="{StaticResource AppName}"/>: it comes from the mods themselves (very often the Unofficial Patch, which edits head
+                                parts without shipping a per-NPC FaceGen).
+                                <LineBreak/>
+                                <Run FontWeight="SemiBold">Nothing here needs fixing, and you should not disable these mods.</Run>
+                                They are listed only so you can recognize them if an NPC looks wrong in game - in which case the fix is to pick a different
+                                Face Plugin for that NPC on the Profile page, not to change your load order.
+                            </TextBlock>
+                            <DataGrid AutoGenerateColumns="False"
+                                      IsReadOnly="True"
+                                      ItemsSource="{Binding InheritedFaceGenMismatchNpcs}"
+                                      Margin="0,8,0,0"
+                                      MaxHeight="300"
+                                      SelectionMode="Single"
+                                      local:ForceTextTrimming.ForceTextTrimming="CharacterEllipsis">
+                                <DataGrid.Resources>
+                                    <Style x:Key="TooltipCellStyle" TargetType="DataGridCell" BasedOn="{StaticResource DefaultDataGridCellStyle}">
+                                        <Setter Property="ToolTip" Value="{Binding Path=Content.Text, RelativeSource={RelativeSource Mode=Self}}"/>
+                                    </Style>
+                                </DataGrid.Resources>
+                                <DataGrid.Columns>
+                                    <DataGridTextColumn Binding="{Binding BasePluginName}"
+                                                        CellStyle="{StaticResource TooltipCellStyle}"
+                                                        Header="Base Plugin"
+                                                        Width="150"/>
+                                    <DataGridTextColumn Binding="{Binding LocalFormIdHex}"
+                                                        CellStyle="{StaticResource TooltipCellStyle}"
+                                                        Header="Form ID"
+                                                        Width="100"/>
+                                    <DataGridTextColumn Binding="{Binding EditorId}"
+                                                        CellStyle="{StaticResource TooltipCellStyle}"
+                                                        Header="Editor ID"
+                                                        Width="200"/>
+                                    <DataGridTextColumn Binding="{Binding Name}"
+                                                        CellStyle="{StaticResource TooltipCellStyle}"
+                                                        Header="Name"
+                                                        Width="*"/>
+                                    <DataGridTextColumn Binding="{Binding WinningPluginName}"
+                                                        CellStyle="{StaticResource TooltipCellStyle}"
+                                                        Header="Winning Plugin"
+                                                        Width="150"/>
+                                    <DataGridTextColumn Binding="{Binding WinningFaceGenSource.ModComponent.Name}"
+                                                        CellStyle="{StaticResource TooltipCellStyle}"
+                                                        Header="Inherited FaceGen From"
                                                         Width="200"/>
                                 </DataGrid.Columns>
                             </DataGrid>

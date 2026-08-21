@@ -113,6 +113,29 @@
                                     </TextBlock>
                                 </ContentControl>
                                 <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    You don't have to wait for detection to be fixed: if you know where the game is, point the app at it yourself.
+                                    Choose the <Run FontStyle="Italic">Data</Run> folder (the one containing <Run FontFamily="Consolas">Skyrim.esm</Run>),
+                                    or the game folder that contains it. This is also how to run the app against a Linux/Proton or portable install.
+                                </TextBlock>
+                                <Button x:Name="SelectGameFolderButton" HorizontalAlignment="Left" Margin="16,4,0,0"
+                                        Click="SelectGameFolderButton_Click">
+                                    Choose the game folder...
+                                </Button>
+                                <TextBlock Margin="16,4,0,0" TextWrapping="Wrap"
+                                           Text="{Binding SelectionResult, Mode=OneWay}"
+                                           Visibility="{Binding HasSelectionResult, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource ParagraphStyle}">
+                                            <Setter Property="Foreground" Value="{StaticResource DangerForegroundBrush}"/>
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsSelectionSuccessful}" Value="True">
+                                                    <Setter Property="Foreground" Value="{StaticResource SuccessForegroundBrush}"/>
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
                                     If you just recently installed the game and are using a supported store, please first
                                     <Hyperlink local:HyperlinkExtensions.DefaultNavigation="True" NavigateUri="{Binding IssuesUrl, Mode=OneWay}">check for an existing issue</Hyperlink>
                                     to see if it has already been solved in a current or upcoming version. Otherwise, start a new bug report and

@@ -32,6 +32,10 @@
                                                         <Setter Property="Foreground" Value="{StaticResource WarningForegroundBrush}"/>
                                                         <Setter Property="Icon" Value="Solid_ExclamationTriangle"/>
                                                     </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ElementName=Control, Path=Status}" Value="Info">
+                                                        <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
+                                                        <Setter Property="Icon" Value="Solid_InfoCircle"/>
+                                                    </DataTrigger>
                                                 </Style.Triggers>
                                             </Style>
                                         </fa:SvgAwesome.Style>
@@ -48,6 +52,10 @@
                                                     </DataTrigger>
                                                     <DataTrigger Binding="{Binding ElementName=Control, Path=Status}" Value="Warning">
                                                         <Setter Property="Foreground" Value="{StaticResource WarningForegroundBrush}"/>
+                                                        <Setter Property="Text" Value="{Binding ElementName=Control, Path=ErrorText}"/>
+                                                    </DataTrigger>
+                                                    <DataTrigger Binding="{Binding ElementName=Control, Path=Status}" Value="Info">
+                                                        <Setter Property="Foreground" Value="{StaticResource MutedTextBrush}"/>
                                                         <Setter Property="Text" Value="{Binding ElementName=Control, Path=ErrorText}"/>
                                                     </DataTrigger>
                                                 </Style.Triggers>

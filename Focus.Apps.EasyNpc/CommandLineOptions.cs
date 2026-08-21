@@ -10,8 +10,10 @@ namespace Focus.Apps.EasyNpc
         [Option('i', "force-intro")]
         public bool ForceIntro { get; set; }
 
+        // Empty means "not specified", so the saved game edition can take over. Without that distinction an explicit
+        // "-g SkyrimSE" would be indistinguishable from no argument at all, and the two need different behavior.
         [Option('g', "game")]
-        public string GameName { get; set; } = "SkyrimSE";
+        public string GameName { get; set; } = string.Empty;
 
         [Option('p', "game-path")]
         public string? GamePath { get; set; } = null;

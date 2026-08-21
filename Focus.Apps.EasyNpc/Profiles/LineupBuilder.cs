@@ -161,6 +161,17 @@ namespace Focus.Apps.EasyNpc.Profiles
                 .FirstOrDefault();
             if (synonymMatch is not null)
                 return synonymMatch;
+            // Last resort before the silhouette: match on the normalized names. This is what makes packs line up with
+            // mods whose folder carries a mod manager's install suffix ("Bijin_AIO-11395-1-0-1-...") or different
+            // separators, without the user having to add a synonym by hand for every one of them.
+            var normalizedMatchName = ModNameMatcher.FindMatch(
+                providedFiles.Select(x => x.Key), mod.Components.Select(x => x.Name).Prepend(mod.Name));
+            if (normalizedMatchName is not null)
+            {
+                var normalizedMatch = providedFiles[normalizedMatchName].FirstOrDefault();
+                if (normalizedMatch is not null)
+                    return normalizedMatch;
+            }
             return female ? genericFemaleFile : genericMaleFile;
         }
 
