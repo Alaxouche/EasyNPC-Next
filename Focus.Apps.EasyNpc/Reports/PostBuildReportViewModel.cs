@@ -9,6 +9,9 @@ using System.Threading.Tasks;
 
 namespace Focus.Apps.EasyNpc.Reports
 {
+    // One mod that is winning over the merge's FaceGen output, and how many NPCs it affects.
+    public record FaceGenOverrideSource(string ModName, int NpcCount);
+
     [AddINotifyPropertyChangedInterface]
     public class PostBuildReportViewModel
     {
@@ -36,10 +39,11 @@ namespace Focus.Apps.EasyNpc.Reports
         public bool HasMultipleMergeComponents => Report.ActiveMergeComponents.Count > 1;
         [DependsOn(nameof(Report))]
         public bool HasSingleMergeComponent => Report.ActiveMergeComponents.Count == 1;
-        // "Consistent" here means: nothing the merge is responsible for is wrong. FaceGen mismatches inherited from
-        // the source mods are tracked separately and deliberately don't turn the report red - they exist with or
-        // without EasyNPC, and telling the user to "disable the conflicting mods" for those is actively harmful
-        // (it's usually USSEP, and removing it brings back the very blackface the user was trying to avoid).
+        // "Consistent" here means: nothing the merge is responsible for is wrong. NPCs whose FaceGen the merge never
+        // shipped are tracked separately and don't turn the report red, because the remedy is different: there is no
+        // merged file to give priority to, so the fix is to choose a Face Plugin that ships a FaceGen. Telling the user
+        // to "disable the conflicting mod" for those is actively harmful (it's usually USSEP, and removing it brings
+        // back the very blackface the user was trying to avoid).
         [DependsOn(nameof(Report))]
         public bool HasConsistentFaceGens => Report.Npcs.All(x => !x.HasMergeFaceGenIssue);
         [DependsOn(nameof(Report))]
@@ -65,6 +69,21 @@ namespace Focus.Apps.EasyNpc.Reports
         [DependsOn(nameof(Report))]
         public IEnumerable<NpcConsistencyInfo> InheritedFaceGenMismatchNpcs =>
             Report.Npcs.Where(x => x.HasInheritedFaceGenMismatch);
+        // The headline an override conflict actually needs: which mods are winning over the merge, and for how many
+        // NPCs. Without it the only evidence is an "Actual FaceGen Mod" column in a list that can run to hundreds of
+        // rows, so the one thing the user has to act on - raise the output mod above *that* mod - is the one thing the
+        // report made them work out for themselves.
+        [DependsOn(nameof(Report))]
+        public IEnumerable<FaceGenOverrideSource> FaceGenOverrideSources =>
+            Report.Npcs
+                .Where(x => x.HasFaceGenOverrideConflict)
+                .GroupBy(x => x.WinningFaceGenSource?.ModComponent?.Name ?? "(unknown mod)")
+                .Select(g => new FaceGenOverrideSource(g.Key, g.Count()))
+                .OrderByDescending(x => x.NpcCount)
+                .ThenBy(x => x.ModName, StringComparer.CurrentCultureIgnoreCase)
+                .ToList();
+        [DependsOn(nameof(Report))]
+        public bool HasFaceGenOverrideSources => FaceGenOverrideSources.Any();
         [DependsOn(nameof(FaceGenArchiveExtractor))]
         public bool IsFaceGenArchiveExtractionStarted => FaceGenArchiveExtractor is not null;
         [DependsOn(nameof(FaceTintArchiveExtractor))]
@@ -138,7 +157,7 @@ namespace Focus.Apps.EasyNpc.Reports
             sb.AppendLine($"NPCs verified:       {VerifiedNpcCount}");
             sb.AppendLine($"FaceGen conflicts:   {FaceGenConflictCount}");
             sb.AppendLine($"Tint mismatches:     {FaceTintMismatchCount}");
-            sb.AppendLine($"Inherited mismatches:{InheritedFaceGenMismatchCount} (informational)");
+            sb.AppendLine($"Inherited FaceGen:   {InheritedFaceGenMismatchCount} missing head parts");
             sb.AppendLine();
             if (Report.MainPluginMissingMasters.Count > 0)
             {
@@ -147,11 +166,18 @@ namespace Focus.Apps.EasyNpc.Reports
                     sb.AppendLine($"  - {master}");
                 sb.AppendLine();
             }
+            if (HasFaceGenOverrideSources)
+            {
+                sb.AppendLine("Mods overriding the merged FaceGen (raise the output mod above these):");
+                foreach (var source in FaceGenOverrideSources)
+                    sb.AppendLine($"  - {source.ModName}: {source.NpcCount} NPC(s)");
+                sb.AppendLine();
+            }
             AppendNpcSection(sb, "FaceGen conflicts (merged face is being overridden)", InconsistentHeadPartNpcs);
             AppendNpcSection(sb, "Face tint mismatches", InconsistentFaceTintNpcs);
             AppendNpcSection(
                 sb,
-                "Inherited FaceGen mismatches (present with or without EasyNPC - informational)",
+                "Inherited FaceGen missing head parts (pick a different Face Plugin for these)",
                 InheritedFaceGenMismatchNpcs);
             return sb.ToString();
         }

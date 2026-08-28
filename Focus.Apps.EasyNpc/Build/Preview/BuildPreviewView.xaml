@@ -166,10 +166,6 @@
                                              local:BorderProperties.CornerRadius="0">Modded</RadioButton>
                                 <Rectangle Style="{StaticResource Separator}"/>
                                 <RadioButton GroupName="NpcFilter"
-                                             IsChecked="{Binding Npcs.Filter, Converter={StaticResource Equals}, ConverterParameter={x:Static bp:NpcSummaryFilter.Ignored}}"
-                                             local:BorderProperties.CornerRadius="0">Ignored</RadioButton>
-                                <Rectangle Style="{StaticResource Separator}"/>
-                                <RadioButton GroupName="NpcFilter"
                                              IsChecked="{Binding Npcs.Filter, Converter={StaticResource Equals}, ConverterParameter={x:Static bp:NpcSummaryFilter.Unmodded}}"
                                              local:BorderProperties.CornerRadius="0">Vanilla</RadioButton>
                                 <Rectangle Style="{StaticResource Separator}"/>
@@ -187,9 +183,6 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Npcs.Filter}" Value="Modded">
                                                 <Setter Property="Background" Value="{StaticResource NpcFilterModdedBackgroundBrush}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Npcs.Filter}" Value="Ignored">
-                                                <Setter Property="Background" Value="{StaticResource NpcFilterIgnoredBackgroundBrush}"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Npcs.Filter}" Value="Unmodded">
                                                 <Setter Property="Background" Value="{StaticResource NpcFilterUnmoddedBackgroundBrush}"/>
@@ -229,9 +222,6 @@
                                             <Border Background="{StaticResource NpcFilterModdedBackgroundBrush}" Style="{StaticResource LegendBorder}">
                                                 <TextBlock Style="{StaticResource LegendText}">Modded</TextBlock>
                                             </Border>
-                                            <Border Background="{StaticResource NpcFilterIgnoredBackgroundBrush}" Style="{StaticResource LegendBorder}">
-                                                <TextBlock Style="{StaticResource LegendText}">Ignored</TextBlock>
-                                            </Border>
                                             <Border Background="{StaticResource NpcFilterUnmoddedBackgroundBrush}" Style="{StaticResource LegendBorder}">
                                                 <TextBlock Style="{StaticResource LegendText}">Vanilla</TextBlock>
                                             </Border>
@@ -245,12 +235,6 @@
                                                TextWrapping="Wrap"
                                                Visibility="{Binding Npcs.Filter, Converter={StaticResource VisibleWhen}, ConverterParameter={x:Static bp:NpcSummaryFilter.Modded}}">
                                         Modded NPCs are being managed by <Run Text="{StaticResource AppName}"/> and will appear in the plugin/facegen output.
-                                    </TextBlock>
-                                    <TextBlock Foreground="{StaticResource MutedTextBrush}"
-                                               Style="{StaticResource CaptionTextBlockStyle}"
-                                               TextWrapping="Wrap"
-                                               Visibility="{Binding Npcs.Filter, Converter={StaticResource VisibleWhen}, ConverterParameter={x:Static bp:NpcSummaryFilter.Ignored}}">
-                                        Ignored NPCs have been manually excluded from your profile.
                                     </TextBlock>
                                     <TextBlock Foreground="{StaticResource MutedTextBrush}"
                                                Style="{StaticResource CaptionTextBlockStyle}"
@@ -294,9 +278,6 @@
                                         <Style.Triggers>
                                             <DataTrigger Binding="{Binding Filter}" Value="Modded">
                                                 <Setter Property="Background" Value="{StaticResource NpcFilterModdedBackgroundBrush}"/>
-                                            </DataTrigger>
-                                            <DataTrigger Binding="{Binding Filter}" Value="Ignored">
-                                                <Setter Property="Background" Value="{StaticResource NpcFilterIgnoredBackgroundBrush}"/>
                                             </DataTrigger>
                                             <DataTrigger Binding="{Binding Filter}" Value="Unmodded">
                                                 <Setter Property="Background" Value="{StaticResource NpcFilterUnmoddedBackgroundBrush}"/>

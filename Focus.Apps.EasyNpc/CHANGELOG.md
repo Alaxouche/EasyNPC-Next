@@ -1,10 +1,24 @@
-# Changelog
+﻿# Changelog
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [1.3.0.0] - 2026-08-28
+### Added
+- **The verification report now names the mod that is overriding your merged faces.** When another mod's copy of a FaceGen wins over the merge, the report used to list the affected NPCs and leave you to work out the culprit from an "Actual FaceGen Mod" column that can run to hundreds of rows - so a single misplaced mod looked like hundreds of unrelated broken NPCs. The conflict section now leads with the mods that are winning and how many NPCs each one costs ("ParallaxGen Output - PBR (174 NPCs)"), followed by the one action that fixes it: give the EasyNPC output mod higher priority than those mods. The usual culprits are mesh-processing outputs - ParallaxGen, DynDOLOD, texture generators - because they copy the FaceGen files that won *before* the merge and then sit at the bottom of the mod list, so their stale copies beat the merged ones. The summary is included in the exported and copied text report as well.
+
+### Fixed
+- **Invisible heads (only a floating mouth) and exploding hair are now detected instead of being passed as fine.** Skyrim looks for each of an NPC's head parts by name inside the FaceGen it loads; when a part isn't there, it falls back to attaching that part's standalone mesh to an unmorphed head. If the missing part is the head itself, the face vanishes and the mouth - which the FaceGen still has - is all that's left; if it's hair or a hair highlight, the mesh stretches across the screen. Three separate faults kept the check from seeing this:
+  - **The FaceGen reader only recognized `BSDynamicTriShape` geometry.** In an SSE FaceGen only the head (and the few parts that need expression morphs) is that type - hair, hairline and scalp are plain `BSTriShape` - so every hair part was invisible to the head part check. The same blind spot meant de-wiggify could not delete a wig's hair shape either, leaving the original hair in place underneath the new one.
+  - **The check demanded that the record and the FaceGen match exactly.** Mod authors routinely bake shapes into a FaceGen that aren't head part records at all (earrings, piercings, horns), and every one of those counted as a conflict, while the condition that actually breaks a face - the record asking for a part the FaceGen doesn't have - was buried among them. Only the latter is reported now. On a 1,213-NPC test merge this took the check from 70 flagged NPCs down to the 8 that are genuinely broken.
+  - **NPCs whose FaceGen the merge never shipped were filed under "nothing here needs fixing".** They can be badly broken; they're broken in a way that needs a *different* remedy, which is not the same thing. That section now states the symptom and the fix - pick a Face Plugin that ships its own FaceGen for those NPCs - while still warning you not to disable the mods involved, since it is usually the Unofficial Patch and removing it brings back the blackface you were avoiding.
+- **Online mugshots no longer stall the Profile page when the network blocks them.** With a VPN, firewall or corporate proxy refusing the connection to npcfacefinder.com, every lookup failed only after a 10-second connect timeout, so moving from one NPC to the next crawled and the log filled with hundreds of identical warnings. After five failures in a row the lookups pause for five minutes and log a single line naming the likely cause (and reminding you that online mugshots can be turned off in Settings for a fully offline app); one success resumes them immediately.
+
+### Removed
+- **The "Ignored" NPC category on the Build page.** Its filter, legend entry and count were left over from an NPC-ignore feature this fork never had: the count was always zero and the filter always showed an empty list, so the page advertised something you couldn't actually do. To narrow what gets merged, use the "merge only the NPCs you customized" build option instead.
 
 ## [1.2.0.0] - 2026-08-21
 ### Added
@@ -387,7 +401,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Initial release with basic record-facegen sync. Profiles, build, settings, and high-level maintenance functions.
 
-[Unreleased]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.2.0.0...HEAD
+[Unreleased]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.3.0.0...HEAD
+[1.3.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.2.0.0...v1.3.0.0
 [1.2.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.1.0.0...v1.2.0.0
 [1.1.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/v1.0.0.0...v1.1.0.0
 [1.0.0.0]: https://github.com/Alaxouche/EasyNPC-Next/compare/focustense-v0.9.6...v1.0.0.0

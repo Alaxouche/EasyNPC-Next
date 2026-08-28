@@ -10,7 +10,7 @@ using System.Linq;
 
 namespace Focus.Apps.EasyNpc.Build.Preview
 {
-    public enum NpcSummaryFilter { All, Ignored, Modded, Unmoddable, Unmodded }
+    public enum NpcSummaryFilter { All, Modded, Unmoddable, Unmodded }
 
     [AddINotifyPropertyChangedInterface]
     public class NpcSummaryRow : IRecordKey
@@ -60,20 +60,18 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         [DependsOn(nameof(Filter))]
         public IEnumerable<NpcSummaryRow> FilteredRows =>
             Filter == NpcSummaryFilter.All ? rows : rows.Where(x => x.Filter == Filter);
-        public int IgnoredCount { get; private set; }
         public int ModdedCount { get; private set; }
         public NpcSummaryRow? SelectedRow { get; set; }
         public int TotalCount { get; private set; }
-        [DependsOn(nameof(IgnoredCount), nameof(ModdedCount), nameof(TotalCount), nameof(UnmoddedCount))]
-        public int UnmoddableCount => TotalCount - IgnoredCount - ModdedCount - UnmoddedCount;
+        [DependsOn(nameof(ModdedCount), nameof(TotalCount), nameof(UnmoddedCount))]
+        public int UnmoddableCount => TotalCount - ModdedCount - UnmoddedCount;
         public int UnmoddedCount { get; private set; }
 
-        [DependsOn(nameof(IgnoredCount), nameof(ModdedCount), nameof(TotalCount), nameof(UnmoddableCount), nameof(UnmoddedCount))]
+        [DependsOn(nameof(ModdedCount), nameof(TotalCount), nameof(UnmoddableCount), nameof(UnmoddedCount))]
         public IEnumerable<SummaryItem> SummaryItems => new List<SummaryItem>
         {
             new(SummaryItemCategory.CountFull, "Total NPCs", TotalCount),
             new(SummaryItemCategory.CountIncluded, "Modded NPCs", ModdedCount),
-            new(SummaryItemCategory.CountExcluded, "Ignored NPCs", IgnoredCount),
             new(SummaryItemCategory.CountEmpty, "Vanilla NPCs", UnmoddedCount),
             new(SummaryItemCategory.CountUnavailable, "Unmoddable NPCs", UnmoddableCount),
         }.AsReadOnly();

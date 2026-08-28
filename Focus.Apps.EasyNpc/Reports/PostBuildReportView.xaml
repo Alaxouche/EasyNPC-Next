@@ -149,12 +149,12 @@
                 </Border>
                 <!-- Informational only: FaceGen/record mismatches the merge didn't create and can't fix. Never red. -->
                 <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="8" Padding="16,10" MinWidth="120"
-                        ToolTip="NPCs whose face EasyNPC left untouched, but whose FaceGen doesn't match their record. This comes from the source mods and exists with or without EasyNPC."
+                        ToolTip="NPCs whose face EasyNPC left untouched, but whose inherited FaceGen is missing a head part their record asks for. Fixed by choosing a different Face Plugin for them, not by changing your load order."
                         Visibility="{Binding HasInheritedFaceGenMismatches, Converter={StaticResource BoolToVisibility}}">
                     <StackPanel>
                         <TextBlock Text="{Binding InheritedFaceGenMismatchCount, Mode=OneWay}" d:Text="7" FontSize="22"
                                    FontWeight="SemiBold" Foreground="{StaticResource MutedTextBrush}"/>
-                        <TextBlock Text="Inherited (info)" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
+                        <TextBlock Text="Inherited FaceGen" FontSize="12" Foreground="{StaticResource MutedTextBrush}"/>
                     </StackPanel>
                 </Border>
             </ui:SimpleStackPanel>
@@ -424,6 +424,33 @@
                                 FontWeight="SemiBold"> output mod higher priority than the mod listed under "Actual FaceGen Mod"</Run>, or extract the merged
                                 files loose using the button below.
                             </TextBlock>
+                            <!-- The actionable summary: which mods are winning, and how many NPCs each one costs. -->
+                            <Border Background="{DynamicResource SystemControlBackgroundListLowBrush}" CornerRadius="6" Padding="12,8"
+                                    Margin="0,8,0,0"
+                                    Visibility="{Binding HasFaceGenOverrideSources, Converter={StaticResource BoolToVisibility}}"
+                                    d:Visibility="Visible">
+                                <ui:SimpleStackPanel>
+                                    <TextBlock Style="{StaticResource BodyTextBlockStyle}" FontWeight="SemiBold">
+                                        Raise the <Run Text="{StaticResource AppName}"/> output mod above these mods:
+                                    </TextBlock>
+                                    <ItemsControl ItemsSource="{Binding FaceGenOverrideSources}" Margin="8,4,0,0">
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate>
+                                                <TextBlock Style="{StaticResource BodyTextBlockStyle}" Margin="0,2,0,0" TextWrapping="Wrap">
+                                                    - <Run FontWeight="SemiBold" Text="{Binding ModName, Mode=OneWay}"/>
+                                                    (<Run Text="{Binding NpcCount, Mode=OneWay}"/> NPCs)
+                                                </TextBlock>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <TextBlock Style="{StaticResource BodyTextBlockStyle}" Margin="0,6,0,0"
+                                               Foreground="{StaticResource MutedTextBrush}" TextWrapping="Wrap">
+                                        Mesh-processing outputs (ParallaxGen, DynDOLOD, texture generators) are the usual culprits: they copy the FaceGen
+                                        files that won <Run FontStyle="Italic">before</Run> the merge and sit at the bottom of the mod list, so their stale
+                                        copies win over the merged ones.
+                                    </TextBlock>
+                                </ui:SimpleStackPanel>
+                            </Border>
                             <ContentControl Visibility="{Binding CanExtractFaceGenFiles, Converter={StaticResource BoolToVisibility}}">
                                 <rpt:ArchiveExtractorView DataContext="{Binding FaceGenArchiveExtractor}"/>
                             </ContentControl>
@@ -541,21 +568,21 @@
                         present with or without a merge. Reporting it as a conflict (and advising users to disable the
                         "conflicting" mod, which is usually USSEP) caused people to break working setups.
                     -->
-                    <rpt:PostBuildReportSection DefaultText="No inherited FaceGen mismatches"
-                                                ErrorText="Inherited FaceGen mismatches (not caused by the merge)"
+                    <rpt:PostBuildReportSection DefaultText="Inherited FaceGen matches the merged records"
+                                                ErrorText="Inherited FaceGen is missing head parts"
                                                 Status="Info"
                                                 Visibility="{Binding HasInheritedFaceGenMismatches, Converter={StaticResource BoolToVisibility}}">
                         <ui:SimpleStackPanel>
                             <TextBlock Foreground="{StaticResource MutedTextBrush}"
                                        Style="{StaticResource BodyTextBlockStyle}">
                                 <Run Text="{StaticResource AppName}"/> left these NPCs' faces alone - their Face Plugin is also their Default Plugin, so no
-                                FaceGen was merged for them. Their record and the FaceGen they inherit don't match, but that is true with or without
-                                <Run Text="{StaticResource AppName}"/>: it comes from the mods themselves (very often the Unofficial Patch, which edits head
-                                parts without shipping a per-NPC FaceGen).
+                                FaceGen was merged for them. The FaceGen they inherit is missing a head part their record asks for, which in game shows as
+                                an invisible head (only the mouth renders) or stretched, exploding hair: the game falls back to attaching that part's
+                                standalone mesh to an unmorphed head.
                                 <LineBreak/>
-                                <Run FontWeight="SemiBold">Nothing here needs fixing, and you should not disable these mods.</Run>
-                                They are listed only so you can recognize them if an NPC looks wrong in game - in which case the fix is to pick a different
-                                Face Plugin for that NPC on the Profile page, not to change your load order.
+                                <Run FontWeight="SemiBold">Do not disable the mods involved</Run> - it is very often the Unofficial Patch, and removing it
+                                brings back the blackface you were avoiding. The fix is to pick a different Face Plugin for these NPCs on the Profile page -
+                                one that ships its own FaceGen - so the merge writes a matching FaceGen for them.
                             </TextBlock>
                             <DataGrid AutoGenerateColumns="False"
                                       IsReadOnly="True"

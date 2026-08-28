@@ -372,7 +372,13 @@ namespace Focus.Apps.EasyNpc.Reports
             var faceGenData = await ReadAllBytes(faceGenSource);
             var faceGenPath = FileStructure.GetFaceMeshFileName(npc);
             var faceGenHeadPartNames = faceGenEditor.Value.GetHeadPartNames(faceGenPath, faceGenData);
-            return recordHeadPartNames.SetEquals(faceGenHeadPartNames);
+            // Only a head part the record asks for and the FaceGen does NOT contain is a problem: the game then falls
+            // back to that part's standalone mesh and attaches it to the head unskinned, which is why such NPCs show
+            // an invisible head (the head shape is missing, so only the mouth - which the FaceGen still has - renders)
+            // or wildly stretched hair. The reverse is normal and harmless: mod authors routinely bake extra shapes
+            // (earrings, piercings, horns) into a FaceGen that are not head part records at all, and demanding set
+            // equality reported every one of those as a conflict.
+            return recordHeadPartNames.IsSubsetOf(faceGenHeadPartNames);
         }
 
         private bool IsMainArchive(string archivePath, string mainBaseName)

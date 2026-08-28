@@ -10,9 +10,9 @@
     <AssemblyName>EasyNPC-Verify</AssemblyName>
     <AssemblyTitle>EasyNPC Next Verify</AssemblyTitle>
     <Product>EasyNPC Next</Product>
-    <Version>1.2.0.0</Version>
-    <AssemblyVersion>1.2.0.0</AssemblyVersion>
-    <FileVersion>1.2.0.0</FileVersion>
+    <Version>1.3.0.0</Version>
+    <AssemblyVersion>1.3.0.0</AssemblyVersion>
+    <FileVersion>1.3.0.0</FileVersion>
     <ApplicationIcon>EasyNPC-Verify.ico</ApplicationIcon>
     <NoWarn>MSB3246</NoWarn>
   </PropertyGroup>

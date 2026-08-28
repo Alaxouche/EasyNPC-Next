@@ -1,4 +1,4 @@
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using Serilog;
 using System;
 using System.Collections.Generic;
@@ -43,11 +43,42 @@ namespace Focus.Apps.EasyNpc.Profiles.FaceFinder
 
         private static readonly HttpClient http = CreateClient();
 
+        // When the network itself refuses us - a VPN or firewall blocking the socket, no DNS, no route - every single
+        // request fails the same way, and each one costs a 10s connect timeout. Browsing the profile then stalls on
+        // every NPC and the log fills with identical warnings. After this many consecutive transport failures, stop
+        // asking for a while; a single success resets it.
+        private const int FailuresBeforeSuspending = 5;
+        private static readonly TimeSpan SuspensionTime = TimeSpan.FromMinutes(5);
+
+        private static int consecutiveFailures;
+        private static long suspendedUntilTicks;
+
         private readonly ILogger log;
 
         public FaceFinderClient(ILogger log)
         {
             this.log = log;
+        }
+
+        private static bool IsSuspended => DateTime.UtcNow.Ticks < Interlocked.Read(ref suspendedUntilTicks);
+
+        private void RecordSuccess()
+        {
+            Interlocked.Exchange(ref consecutiveFailures, 0);
+            Interlocked.Exchange(ref suspendedUntilTicks, 0);
+        }
+
+        private void RecordFailure()
+        {
+            if (Interlocked.Increment(ref consecutiveFailures) != FailuresBeforeSuspending)
+                return;
+            Interlocked.Exchange(ref suspendedUntilTicks, DateTime.UtcNow.Add(SuspensionTime).Ticks);
+            log.Warning(
+                "Online mugshots are unreachable ({Count} requests in a row failed to connect), so they are paused " +
+                "for {Minutes} minutes. This is almost always a VPN, firewall or corporate proxy blocking the " +
+                "connection to npcfacefinder.com - try again with the VPN off, or turn online mugshots off in " +
+                "Settings to work fully offline.",
+                FailuresBeforeSuspending, SuspensionTime.TotalMinutes);
         }
 
         public async Task<IReadOnlyList<FaceFinderFace>> GetNpcFacesAsync(
@@ -57,6 +88,8 @@ namespace Focus.Apps.EasyNpc.Profiles.FaceFinder
             // pack naming ("00" + local id).
             var formKey = $"00{npc.LocalFormIdHex}:{npc.BasePluginName}";
             var results = new List<FaceFinderFace>();
+            if (IsSuspended)
+                return results;
             for (var page = 1; page <= MaxPages; page++)
             {
                 var url = $"{BaseUrl}/api/public/v2/npc/faces/search" +
@@ -87,9 +120,12 @@ namespace Focus.Apps.EasyNpc.Profiles.FaceFinder
 
         public async Task<byte[]?> DownloadImageAsync(string url, CancellationToken cancellationToken)
         {
+            if (IsSuspended)
+                return null;
             try
             {
                 using var response = await http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                RecordSuccess();
                 if (response.StatusCode == (HttpStatusCode)429)
                 {
                     await HonorRetryAfterAsync(response, cancellationToken).ConfigureAwait(false);
@@ -101,6 +137,7 @@ namespace Focus.Apps.EasyNpc.Profiles.FaceFinder
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
+                RecordFailure();
                 log.Debug(ex, "FaceFinder image download failed for {Url}", url);
                 return null;
             }
@@ -170,9 +207,13 @@ namespace Focus.Apps.EasyNpc.Profiles.FaceFinder
 
         private async Task<JObject?> GetJsonAsync(string url, CancellationToken cancellationToken)
         {
+            if (IsSuspended)
+                return null;
             try
             {
                 using var response = await http.GetAsync(url, cancellationToken).ConfigureAwait(false);
+                // We reached the server. A 429 or a 404 is a real answer, so the transport is fine either way.
+                RecordSuccess();
                 if (response.StatusCode == (HttpStatusCode)429)
                 {
                     log.Information("FaceFinder rate limited (429) on {Url}", url);
@@ -194,6 +235,7 @@ namespace Focus.Apps.EasyNpc.Profiles.FaceFinder
                 var inner = ex.InnerException?.Message;
                 log.Warning("FaceFinder request failed for {Url}: {Error} [{Type}]{Inner}",
                     url, ex.Message, ex.GetType().Name, inner is null ? "" : " <- " + inner);
+                RecordFailure();
                 return null;
             }
         }

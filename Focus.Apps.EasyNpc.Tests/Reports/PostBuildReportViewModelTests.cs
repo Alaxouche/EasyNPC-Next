@@ -23,6 +23,8 @@ namespace Focus.Apps.EasyNpc.Tests.Reports
             new(ModLocatorKey.Empty, "Vanilla", "Vanilla", @"C:\game\data");
         private static readonly ModComponentInfo OtherModComponent =
             new(new ModLocatorKey("2", "Some Overhaul"), "other", "Some Overhaul", @"C:\mods\Some Overhaul");
+        private static readonly ModComponentInfo ParallaxComponent =
+            new(new ModLocatorKey("3", "ParallaxGen Output"), "pg", "ParallaxGen Output", @"C:\mods\ParallaxGen Output");
 
         [Fact]
         public void NpcWithNoMergedFaceGen_IsNotAConflict()
@@ -109,8 +111,46 @@ namespace Focus.Apps.EasyNpc.Tests.Reports
 
             Assert.Contains("FaceGen conflicts:   1", text);
             Assert.Contains("ConflictedNpc", text);
-            Assert.Contains("informational", text);
+            Assert.Contains("Inherited FaceGen missing head parts", text);
             Assert.Contains("InheritedNpc", text);
+        }
+
+        [Fact]
+        public void OverridingModsAreSummarizedWithTheirNpcCounts()
+        {
+            // What the user actually has to act on. With only the per-NPC grid, a mesh-processing output winning over
+            // hundreds of merged faces looked like hundreds of unrelated broken NPCs instead of one mod to re-order.
+            var viewModel = ViewModelFor(
+                Conflicted(OtherModComponent),
+                Conflicted(OtherModComponent),
+                Conflicted(ParallaxComponent),
+                Npc(isFaceGenProvidedByMerge: false, hasConsistentHeadParts: false, faceGenSource: VanillaComponent));
+
+            var sources = viewModel.FaceGenOverrideSources.ToList();
+
+            Assert.True(viewModel.HasFaceGenOverrideSources);
+            Assert.Equal(2, sources.Count);
+            // Ordered by impact, so the mod costing the most NPCs is named first.
+            Assert.Equal(new FaceGenOverrideSource("Some Overhaul", 2), sources[0]);
+            Assert.Equal(new FaceGenOverrideSource("ParallaxGen Output", 1), sources[1]);
+            Assert.Contains("Some Overhaul: 2 NPC(s)", viewModel.BuildTextReport());
+        }
+
+        [Fact]
+        public void NoOverrideConflicts_ProducesNoOverrideSummary()
+        {
+            var viewModel = ViewModelFor(
+                Npc(isFaceGenProvidedByMerge: true, hasConsistentHeadParts: false, faceGenSource: MergeComponent));
+
+            Assert.False(viewModel.HasFaceGenOverrideSources);
+            Assert.Empty(viewModel.FaceGenOverrideSources);
+        }
+
+        private static NpcConsistencyInfo Conflicted(ModComponentInfo winningFaceGenSource)
+        {
+            return Npc(
+                isFaceGenProvidedByMerge: true, hasConsistentHeadParts: true, faceGenSource: winningFaceGenSource,
+                hasFaceGenOverrideConflict: true);
         }
 
         private static NpcConsistencyInfo Npc(

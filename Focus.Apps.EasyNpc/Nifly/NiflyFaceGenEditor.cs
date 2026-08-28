@@ -127,10 +127,14 @@ namespace Focus.Apps.EasyNpc.Nifly
             var header = file.GetHeader();
             var refs = new setNiRef();
             parent.GetChildRefs(refs);
+            // Every geometry type, not just the morphable head. In an SSE FaceGen only the head (and a few parts that
+            // need expression morphs) is a BSDynamicTriShape; hair, hairline and scalp are plain BSTriShape, and
+            // Oldrim/bad SE conversions use NiTriShape. Matching on BSDynamicTriShape alone silently dropped the hair
+            // parts, so the head part consistency check compared against an incomplete list and de-wiggify could not
+            // delete a wig's hair shape (leaving the old hair in place under the new one).
             return refs
                 .Select(x => header.GetBlockById(x.index))
-                .Where(x => x is BSDynamicTriShape || /* Oldrim and bad SE conversions */ x is NiTriShape)
-                .Cast<NiShape>();
+                .OfType<NiShape>();
         }
     }
 }
