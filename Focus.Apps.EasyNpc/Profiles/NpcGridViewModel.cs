@@ -12,6 +12,8 @@ namespace Focus.Apps.EasyNpc.Profiles
 #pragma warning restore 67
 
         public NpcGridHeaders Headers { get; private set; }
+        // NPCs left out of the merge, so their rows can be marked.
+        public IReadOnlySet<IRecordKey> ExcludedNpcs { get; set; } = new HashSet<IRecordKey>();
         public IEnumerable<INpc> Npcs { get; set; } = Enumerable.Empty<Npc>();
         public INpc? SelectedNpc { get; set; }
 

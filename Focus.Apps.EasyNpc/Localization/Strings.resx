@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Alerts.ByCause" xml:space="preserve">
+    <value>By cause. One line per problem and plugin, with the fix that applies to all of its NPCs.</value>
+  </data>
+  <data name="Alerts.ExcludeNpcs" xml:space="preserve">
+    <value>Exclude these NPCs</value>
+  </data>
+  <data name="Alerts.PickOtherFaces" xml:space="preserve">
+    <value>Pick other faces</value>
+  </data>
+  <data name="Alerts.Show" xml:space="preserve">
+    <value>Show</value>
+  </data>
+  <data name="Alerts.ShowAll" xml:space="preserve">
+    <value>Show all</value>
+  </data>
+  <data name="Alerts.ShowingOnly" xml:space="preserve">
+    <value>Showing only:</value>
+  </data>
+  <data name="Batch.AutoAssign" xml:space="preserve">
+    <value>Auto-assign recommended faces to all filtered NPCs</value>
+  </data>
+  <data name="Batch.Button" xml:space="preserve">
+    <value>Batch</value>
+  </data>
+  <data name="Batch.Exclude" xml:space="preserve">
+    <value>Exclude filtered NPCs from the merge</value>
+  </data>
+  <data name="Batch.Include" xml:space="preserve">
+    <value>Include filtered NPCs in the merge again</value>
+  </data>
+  <data name="Batch.ResetVanilla" xml:space="preserve">
+    <value>Reset all filtered NPCs to vanilla</value>
+  </data>
+  <data name="Batch.Tooltip" xml:space="preserve">
+    <value>Apply an action to every NPC in the current filter</value>
+  </data>
+  <data name="Build.ChangeFace" xml:space="preserve">
+    <value>Change face</value>
+  </data>
+  <data name="Build.MergeAgain" xml:space="preserve">
+    <value>Merge them again</value>
+  </data>
+  <data name="Common.OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Filters.Excluded" xml:space="preserve">
+    <value>Excluded from merge</value>
+  </data>
+  <data name="Loader.CommonMissingMasters" xml:space="preserve">
+    <value>Most common missing masters: {0}.</value>
+  </data>
+  <data name="Loader.ConfirmPlugins" xml:space="preserve">
+    <value>Confirm plugin selection and load order.</value>
+  </data>
+  <data name="Loader.GettingReady" xml:space="preserve">
+    <value>Getting things ready</value>
+  </data>
+  <data name="Loader.HoverHint" xml:space="preserve">
+    <value>Hover the warning icons for details.</value>
+  </data>
+  <data name="Loader.ManyUnloadable" xml:space="preserve">
+    <value>{0} selected plugins can't be loaded.</value>
+  </data>
+  <data name="Loader.OneUnloadable" xml:space="preserve">
+    <value>{0} is selected but can't be loaded.</value>
+  </data>
+  <data name="Loader.ShowOnlyProblems" xml:space="preserve">
+    <value>Show only plugins that can't load</value>
+  </data>
+  <data name="Loader.Unreadable" xml:space="preserve">
+    <value>{0} unreadable or corrupt.</value>
+  </data>
+  <data name="Nav.Build" xml:space="preserve">
+    <value>Build</value>
+  </data>
+  <data name="Nav.Build.Description" xml:space="preserve">
+    <value>Review your choices and generate the merged plugin</value>
+  </data>
+  <data name="Nav.Log" xml:space="preserve">
+    <value>Log</value>
+  </data>
+  <data name="Nav.Log.Description" xml:space="preserve">
+    <value>Diagnostic output for troubleshooting</value>
+  </data>
+  <data name="Nav.Maintenance" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
+  <data name="Nav.Maintenance.Description" xml:space="preserve">
+    <value>Sync and fix up your saved NPC choices</value>
+  </data>
+  <data name="Nav.Profile" xml:space="preserve">
+    <value>Profile</value>
+  </data>
+  <data name="Nav.Profile.Description" xml:space="preserve">
+    <value>Choose each NPC's appearance</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Nav.Settings.Description" xml:space="preserve">
+    <value>Configure how EasyNPC Next finds your mods and builds output</value>
+  </data>
+  <data name="Settings.Appearance" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Settings.BuildSettings" xml:space="preserve">
+    <value>Build Settings</value>
+  </data>
+  <data name="Settings.ColorTheme" xml:space="preserve">
+    <value>Color theme</value>
+  </data>
+  <data name="Settings.HardLinks" xml:space="preserve">
+    <value>Hard-link merged files instead of copying them (same drive only)</value>
+  </data>
+  <data name="Settings.Language" xml:space="preserve">
+    <value>Language</value>
+  </data>
+  <data name="Settings.LanguageHint" xml:space="preserve">
+    <value>Takes effect the next time you start the app. Help texts and build messages are in English for now.</value>
+  </data>
+  <data name="Settings.Paths" xml:space="preserve">
+    <value>Paths</value>
+  </data>
+  <data name="Settings.PluginHeaderVersion" xml:space="preserve">
+    <value>Plugin header version</value>
+  </data>
+  <data name="Settings.PluginsFile" xml:space="preserve">
+    <value>Plugins File (plugins.txt)</value>
+  </data>
+  <data name="Startup.Exit" xml:space="preserve">
+    <value>Exit</value>
+  </data>
+  <data name="Startup.InstalledAsMod" xml:space="preserve">
+    <value>Installed as a mod</value>
+  </data>
+  <data name="Startup.OutsideModOrganizer" xml:space="preserve">
+    <value>Not started from Mod Organizer</value>
+  </data>
+  <data name="Startup.ProceedAnyway" xml:space="preserve">
+    <value>Proceed Anyway</value>
+  </data>
+</root>

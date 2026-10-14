@@ -40,6 +40,7 @@ namespace Focus.Apps.EasyNpc.Profiles
         public NpcViewModel? SelectedNpc { get; private set; }
 
         private readonly HashSet<IRecordKey> alwaysVisibleNpcKeys = new(RecordKeyComparer.Default);
+        private readonly INpcExclusions exclusions;
         private readonly FaceFinder.FaceFinderMugshotRepository faceFinder;
         private readonly Serilog.ILogger log;
         private readonly ILineupBuilder lineupBuilder;
@@ -57,8 +58,9 @@ namespace Focus.Apps.EasyNpc.Profiles
         public ProfileViewModel(
             Profile profile, ILineupBuilder lineupBuilder, IGameSettings gameSettings, IMessageBus messageBus,
             FaceFinder.FaceFinderMugshotRepository faceFinder, Serilog.ILogger log,
-            IObservableAppSettings appSettings)
+            IObservableAppSettings appSettings, INpcExclusions exclusions)
         {
+            this.exclusions = exclusions;
             this.faceFinder = faceFinder;
             this.log = log;
             this.lineupBuilder = lineupBuilder;
@@ -80,6 +82,12 @@ namespace Focus.Apps.EasyNpc.Profiles
             Search.PropertyChanged += (_, _) => ApplyFilters();
 
             messageBus.Subscribe<JumpToProfile>(HandleJumpToProfile);
+            exclusions.Excluded.Subscribe(set =>
+            {
+                Grid.ExcludedNpcs = set;
+                if (Filters.Excluded)
+                    ApplyFilters();
+            });
 
             ApplyFilters();
         }
@@ -160,6 +168,27 @@ namespace Focus.Apps.EasyNpc.Profiles
             return applied;
         }
 
+        // Leaves every filtered NPC out of the merge - e.g. filter "Provided in: Madmen.esp", then exclude, to keep a
+        // mod that adds its own NPCs from being merged. Returns how many were newly excluded.
+        public int BatchExcludeFiltered()
+        {
+            var excluded = exclusions.Exclude(Grid.Npcs.ToList());
+            RefreshAfterBatch();
+            return excluded;
+        }
+
+        public int BatchIncludeFiltered()
+        {
+            var included = exclusions.Include(Grid.Npcs.ToList());
+            RefreshAfterBatch();
+            return included;
+        }
+
+        public int CountFilteredExcluded()
+        {
+            return Grid.Npcs.Count(x => exclusions.IsExcluded(x));
+        }
+
         public int CountFilteredNpcs()
         {
             return Grid.Npcs.Count();
@@ -224,6 +253,8 @@ namespace Focus.Apps.EasyNpc.Profiles
             if (Filters.Conflicts)
                 // Not really a "conflict" anymore, but we'll repurpose the filter.
                 filteredNpcs = filteredNpcs.Where(x => x.FaceGenOverride is not null);
+            if (Filters.Excluded)
+                filteredNpcs = filteredNpcs.Where(x => exclusions.IsExcluded(x));
             if (Filters.Missing)
                 // TODO: Also check for invalid facegen override plugin?
                 filteredNpcs = filteredNpcs.Where(x => x.HasMissingPlugins);

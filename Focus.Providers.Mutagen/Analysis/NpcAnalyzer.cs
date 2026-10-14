@@ -141,7 +141,7 @@ namespace Focus.Providers.Mutagen.Analysis
                 IsChargenFacePreset = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.IsCharGenFacePreset),
                 IsChild = race?.Flags.HasFlag(Race.Flag.Child) ?? false,
                 IsFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female),
-                MainHeadParts = GetMainHeadParts(npc).Select(x => x.FormKey).ToRecordKeys(),
+                MainHeadParts = GetMainHeadParts(npc, pluginName).Select(x => x.FormKey).ToRecordKeys(),
                 Name = npc.Name?.String ?? string.Empty,
                 ReferencedAssets = (assetPathExtractor?.GetReferencedAssets(npc) ?? Enumerable.Empty<AssetReference>())
                     .ToList().AsReadOnly(),
@@ -244,7 +244,10 @@ namespace Focus.Providers.Mutagen.Analysis
                 null;
         }
 
-        private IEnumerable<IHeadPartGetter> GetMainHeadParts(INpcGetter npc)
+        // pluginName is the plugin whose view of the NPC is being analyzed, and decides where the race's default head
+        // parts come from. The comparison helpers pass nothing: they ask whether two overrides differ, which has to be
+        // measured against one and the same race, so they keep the load order winner's.
+        private IEnumerable<IHeadPartGetter> GetMainHeadParts(INpcGetter npc, string? pluginName = null)
         {
             // TODO: One issue this could miss is if a plugin has actually changed the head parts of the vanilla race.
             // It can be difficult to sort out intent here; for example, if the current/LHS plugin being compared itself
@@ -253,13 +256,30 @@ namespace Focus.Providers.Mutagen.Analysis
             // different head parts, then it is also a change. But what if some plugin in between the previous/RHS and
             // current/LHS changed the race's head parts and didn't change the NPCs, and the current/LHS matches that
             // in-between plugin modifying the race? Do we consider that a head part change, or not?
+            // A plugin's FaceGen is baked from the head parts THAT plugin sees, and the game later matches those baked
+            // shapes to the record's head parts by editor ID, driving each shape with its part's morph data. So the
+            // defaults filling a slot the NPC says nothing about have to be the ones this plugin would use: overhauls
+            // routinely keep the vanilla editor IDs while repointing a race's default mouth or eyes at their own
+            // high-poly parts, and filling the slot from the load order winner instead writes a part with the same name
+            // but a different vertex count. The game then drives the baked shape with the wrong morph table, which
+            // distorts the mesh across the scene and reads past the end of its vertex list - a crash, not a blemish.
             var race = npc.Race.WinnerFrom(groups);
+            var raceForDefaults = (!string.IsNullOrEmpty(pluginName) ?
+                groups.Get(pluginName, x => x.Races)?.TryGetValue(npc.Race.FormKey) : null) ?? race;
             var isFemale = npc.Configuration.Flags.HasFlag(NpcConfiguration.Flag.Female);
-            var defaultHeadPartRefs = isFemale ? race?.HeadData?.Female?.HeadParts : race?.HeadData?.Male?.HeadParts;
-            return (defaultHeadPartRefs ?? Enumerable.Empty<IHeadPartReferenceGetter>())
+            var defaultHeadPartRefs = isFemale ?
+                raceForDefaults?.HeadData?.Female?.HeadParts : raceForDefaults?.HeadData?.Male?.HeadParts;
+            var raceParts = (defaultHeadPartRefs ?? Enumerable.Empty<IHeadPartReferenceGetter>())
                 .Select(x => x.Head.WinnerFrom(groups))
-                .Concat(npc.HeadParts.Select(x => x.WinnerFrom(groups)))
                 .NotNull()
+                .ToList();
+            var npcParts = npc.HeadParts.Select(x => x.WinnerFrom(groups)).NotNull().ToList();
+            // The game falls back to the race's default for a type the NPC says nothing about, and only then: an NPC
+            // that brings its own parts of a type replaces the race's, it doesn't add to them.
+            var typesFromNpc = npcParts.Select(x => x.Type).ToHashSet();
+            return raceParts
+                .Where(x => !typesFromNpc.Contains(x.Type))
+                .Concat(npcParts)
                 .GroupBy(x => x.Type)
                 .SelectMany(g => IsSecondaryPart(g.Key) ? g.Cast<IHeadPartGetter>() : new[] { g.Last() });
         }
@@ -341,11 +361,15 @@ namespace Focus.Providers.Mutagen.Analysis
             return new HashSet<RecordKey>(lhsParts).SetEquals(rhsParts);
         }
 
+        // Types an NPC can carry several of at once. Keeping only one of these silently drops the others, and the game
+        // then falls back to the race's default for the dropped slot: a FaceGen baked with a custom mouth, driven by
+        // the vanilla mouth's morph data, reads past the end of its vertex list and crashes during facial animation.
         private static bool IsSecondaryPart(HeadPart.TypeEnum? headPartType)
         {
-            // Marks (scars) are confirmed to be a "secondary" or "additional" head part, meaning multiple can be added.
-            // Unsure if any other types are in the same category.
-            return headPartType == HeadPart.TypeEnum.Scars;
+            // Scars are the obvious one, but "Misc" is the game's catch-all slot and holds several parts routinely:
+            // mouths, eyelashes, hairlines, shaved-hair pieces and beard stubble are all Misc. Vanilla Skyrim.esm
+            // itself has NPCs carrying two or three of them, as do most high-poly head overhauls.
+            return headPartType is HeadPart.TypeEnum.Scars or HeadPart.TypeEnum.Misc;
         }
 
         private static bool NearlyEquals(float x, float y)

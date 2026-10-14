@@ -6,6 +6,7 @@
         xmlns:local="clr-namespace:Focus.Apps.EasyNpc"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
+             xmlns:loc="clr-namespace:Focus.Apps.EasyNpc.Localization"
         xmlns:ui="http://schemas.modernwpf.com/2019" d:DataContext="{d:DesignInstance Type=main:StartupWarningViewModel}"
         mc:Ignorable="d"
         ui:WindowHelper.UseModernWindowStyle="True"
@@ -143,6 +144,37 @@
                                 </TextBlock>
                             </ui:SimpleStackPanel>
                         </DataTemplate>
+                        <DataTemplate DataType="{x:Type main:InstalledAsModContent}">
+                            <ui:SimpleStackPanel>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    <Run Text="{StaticResource AppName}"/> looks like it was installed as a mod, inside your mods folder:
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParagraphStyle}" FontFamily="Consolas" Text="{Binding ExecutablePath}"/>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    It is a tool, not a mod. Installed this way, Mod Organizer serves it through its virtual file system, which keeps it
+                                    from starting for some people, and it can't see your mods when started any other way.
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    Extract it to a folder of its own outside the mods folder (next to your other tools such as xEdit), then add that
+                                    <Run FontFamily="Consolas">EasyNPC.exe</Run> to Mod Organizer's executables and start it from there.
+                                </TextBlock>
+                            </ui:SimpleStackPanel>
+                        </DataTemplate>
+                        <DataTemplate DataType="{x:Type main:LaunchedOutsideModOrganizerContent}">
+                            <ui:SimpleStackPanel>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    Your mods are managed by Mod Organizer, but <Run Text="{StaticResource AppName}"/> was not started by it.
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    Mod Organizer only shows your mods to programs it starts itself. Started any other way,
+                                    <Run Text="{StaticResource AppName}"/> sees the bare game folder: only vanilla faces, and plugins reported as missing.
+                                </TextBlock>
+                                <TextBlock Style="{StaticResource ParagraphStyle}">
+                                    Add <Run FontFamily="Consolas">EasyNPC.exe</Run> to Mod Organizer's executables (the drop-down next to the Run button)
+                                    and start it from there. Click "Proceed Anyway" only if you know your setup doesn't need it.
+                                </TextBlock>
+                            </ui:SimpleStackPanel>
+                        </DataTemplate>
                         <DataTemplate DataType="{x:Type main:UnsupportedGameContent}">
                             <ui:SimpleStackPanel>
                                 <TextBlock Style="{StaticResource ParagraphStyle}">
@@ -161,8 +193,8 @@
                 </ContentControl>
             </Border>
             <ui:SimpleStackPanel Grid.Row="2" Grid.Column="1" HorizontalAlignment="Right" Orientation="Horizontal">
-                <Button x:Name="IgnoreButton" HorizontalAlignment="Right" MinWidth="120" Visibility="{Binding IsFatal, Converter={StaticResource InvBoolToVisibility}}" Click="IgnoreButton_Click">Proceed Anyway</Button>
-                <Button x:Name="ExitButton" HorizontalAlignment="Right" MinWidth="120" Margin="8,0,0,0" Style="{StaticResource AccentButtonStyle}" Click="ExitButton_Click">Exit</Button>
+                <Button x:Name="IgnoreButton" HorizontalAlignment="Right" MinWidth="120" Visibility="{Binding IsFatal, Converter={StaticResource InvBoolToVisibility}}" Click="IgnoreButton_Click" Content="{loc:Tr Startup.ProceedAnyway}"/>
+                <Button x:Name="ExitButton" HorizontalAlignment="Right" MinWidth="120" Margin="8,0,0,0" Style="{StaticResource AccentButtonStyle}" Click="ExitButton_Click" Content="{loc:Tr Startup.Exit}"/>
             </ui:SimpleStackPanel>
         </Grid>
     </Border>

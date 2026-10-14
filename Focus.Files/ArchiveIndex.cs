@@ -6,6 +6,9 @@ namespace Focus.Files
     public class ArchiveIndex : IBucketedFileIndex
     {
         private readonly List<string> archiveOrder = new();
+        // Position of each archive in archiveOrder, kept in step with it. FindInBuckets runs for every asset lookup, and
+        // rebuilding this map there made each lookup cost as much as the whole archive list.
+        private readonly Dictionary<string, int> archivePositions = new(PathComparer.Default);
         private readonly IArchiveProvider archiveProvider;
         private readonly Dictionary<string, IReadOnlySet<string>> contentPaths = new(PathComparer.Default);
         private readonly Dictionary<string, HashSet<string>> inverseContentPaths = new(PathComparer.Default);
@@ -22,8 +25,9 @@ namespace Focus.Files
 
         public void AddArchives(IEnumerable<string> archivePaths)
         {
-            var newArchivePaths = archivePaths.Where(f => !contentPaths.ContainsKey(f));
+            var newArchivePaths = archivePaths.Where(f => !contentPaths.ContainsKey(f)).ToList();
             archiveOrder.AddRange(newArchivePaths);
+            IndexPositions();
             var newEntries = newArchivePaths
                 .AsParallel()
                 .Select(p => new
@@ -47,6 +51,7 @@ namespace Focus.Files
         public void Clear()
         {
             archiveOrder.Clear();
+            archivePositions.Clear();
             contentPaths.Clear();
             inverseContentPaths.Clear();
         }
@@ -60,9 +65,8 @@ namespace Focus.Files
         {
             if (inverseContentPaths.TryGetValue(pathInBucket, out var archivePaths))
             {
-                var orderings = archiveOrder.Select((name, index) => (name, index)).ToDictionary(x => x.name, x => x.index);
                 return archivePaths
-                    .OrderBy(p => orderings[p])
+                    .OrderBy(p => archivePositions[p])
                     .Select(p => new KeyValuePair<string, string>(p, PathComparer.NormalizePath(pathInBucket)));
             }
             return Enumerable.Empty<KeyValuePair<string, string>>();
@@ -97,7 +101,15 @@ namespace Focus.Files
                     GetOrAddInverseSet(contentPath).Remove(archivePath);
             }
             archiveOrder.Remove(archivePath);
+            IndexPositions();
             return removed;
+        }
+
+        private void IndexPositions()
+        {
+            archivePositions.Clear();
+            for (var i = 0; i < archiveOrder.Count; i++)
+                archivePositions[archiveOrder[i]] = i;
         }
 
         private HashSet<string> GetOrAddInverseSet(string contentPath)

@@ -36,8 +36,15 @@ namespace Focus.Providers.Mutagen
             this.iniListings = archive.GetIniListings(game.GameRelease).ToHashSet();
         }
 
-        // Archives in load order, built by hand: Mutagen 0.53's archive sort throws for ordinary plugin BSAs. Matches
-        // the game's rule: base-game ini archives first, then each plugin's "<name>.bsa" and "<name> - Textures.bsa".
+        // Archives in *priority* order - the winner first - which is what every consumer of this property assumes:
+        // the file providers take the first archive that has a file, and the post-build report names the first one as
+        // the asset's source. The game loads base-game ini archives first and then each plugin's "<name>.bsa" and
+        // "<name> - Textures.bsa" in load order, and a later-loaded archive wins, so priority order is that sequence
+        // reversed. Building it in game order and handing it to a first-wins consumer meant EasyNPC read every
+        // duplicated asset from the *lowest* priority archive - usually vanilla instead of the overhaul that was
+        // supposed to provide it.
+        //
+        // Built by hand because Mutagen 0.53's archive sort throws for ordinary plugin BSAs.
         public IEnumerable<string> ArchiveOrder
         {
             get
@@ -59,6 +66,7 @@ namespace Focus.Providers.Mutagen
                         ordered.Add(archiveName);
                 }
 
+                // Load order, lowest priority first...
                 foreach (var iniListing in iniListings)
                     Add(iniListing.String);
                 foreach (var listing in env.LoadOrder.ListedOrder)
@@ -67,7 +75,9 @@ namespace Focus.Providers.Mutagen
                     Add($"{name}{extension}");
                     Add($"{name} - Textures{extension}");
                 }
-                // Include any other BSAs present (non-standard names), appended last so they don't override the above.
+                ordered.Reverse();
+                // ...then any other BSAs present (non-standard names). The game doesn't load these at all unless the
+                // mod manager forces them, so they stay at the bottom and never override a real archive.
                 foreach (var archiveName in existingArchives)
                     Add(archiveName);
                 return ordered;

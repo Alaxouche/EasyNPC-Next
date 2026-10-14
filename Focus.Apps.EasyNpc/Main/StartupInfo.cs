@@ -24,6 +24,10 @@ namespace Focus.Apps.EasyNpc.Main
 
         private static StartupInfo? instance;
 
+        // The app's own folder sits inside the mod directory (installed as a mod). Mod Organizer then serves the
+        // executable through its virtual file system, which keeps it from starting at all for some users, and when it
+        // does start from outside, it can't see the mods.
+        public bool IsInstalledAsMod { get; private init; }
         public ModManager Launcher { get; private init; } = ModManager.Unknown;
         public ModManager ModDirectoryOwner { get; private init; } = ModManager.Unknown;
         public string? ParentProcessPath { get; private init; }
@@ -33,6 +37,7 @@ namespace Focus.Apps.EasyNpc.Main
             var parentProcess = Process.GetCurrentProcess().Parent();
             instance = new StartupInfo
             {
+                IsInstalledAsMod = DetectInstalledAsMod(Settings.Default.DefaultModRootDirectory),
                 Launcher = DetectProcessModManager(parentProcess),
                 ModDirectoryOwner = DetectModDirectoryModManager(Settings.Default.DefaultModRootDirectory),
                 ParentProcessPath = parentProcess?.MainModule?.FileName,
@@ -41,6 +46,24 @@ namespace Focus.Apps.EasyNpc.Main
         }
 
         private StartupInfo() { }
+
+        private static bool DetectInstalledAsMod(string modRootDirectory)
+        {
+            var appDirectory = Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory);
+            if (!string.IsNullOrEmpty(modRootDirectory) && Directory.Exists(modRootDirectory))
+            {
+                var modRoot = Path.TrimEndingDirectorySeparator(Path.GetFullPath(modRootDirectory));
+                if (appDirectory.StartsWith(modRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
+                    return true;
+            }
+            // No mod folder configured yet (first run): a Mod Organizer mod folder is recognizable by its meta.ini.
+            var directory = new DirectoryInfo(appDirectory);
+            for (var i = 0; i < 2 && directory is not null; i++, directory = directory.Parent)
+                if (File.Exists(Path.Combine(directory.FullName, "meta.ini")) &&
+                    string.Equals(directory.Parent?.Name, "mods", StringComparison.OrdinalIgnoreCase))
+                    return true;
+            return false;
+        }
 
         private static ModManager DetectModDirectoryModManager(string directoryPath)
         {

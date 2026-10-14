@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Alerts.ByCause" xml:space="preserve">
+    <value>按原因分组：每个问题和插件一行，并提供适用于其所有 NPC 的修复方法。</value>
+  </data>
+  <data name="Alerts.ExcludeNpcs" xml:space="preserve">
+    <value>排除这些 NPC</value>
+  </data>
+  <data name="Alerts.PickOtherFaces" xml:space="preserve">
+    <value>选择其他面孔</value>
+  </data>
+  <data name="Alerts.Show" xml:space="preserve">
+    <value>显示</value>
+  </data>
+  <data name="Alerts.ShowAll" xml:space="preserve">
+    <value>显示全部</value>
+  </data>
+  <data name="Alerts.ShowingOnly" xml:space="preserve">
+    <value>仅显示：</value>
+  </data>
+  <data name="Batch.AutoAssign" xml:space="preserve">
+    <value>为所有筛选的 NPC 自动分配推荐面孔</value>
+  </data>
+  <data name="Batch.Button" xml:space="preserve">
+    <value>批量操作</value>
+  </data>
+  <data name="Batch.Exclude" xml:space="preserve">
+    <value>将筛选的 NPC 排除在合并之外</value>
+  </data>
+  <data name="Batch.Include" xml:space="preserve">
+    <value>将筛选的 NPC 重新加入合并</value>
+  </data>
+  <data name="Batch.ResetVanilla" xml:space="preserve">
+    <value>将所有筛选的 NPC 重置为原版</value>
+  </data>
+  <data name="Batch.Tooltip" xml:space="preserve">
+    <value>对当前筛选中的所有 NPC 执行操作</value>
+  </data>
+  <data name="Build.ChangeFace" xml:space="preserve">
+    <value>更换面孔</value>
+  </data>
+  <data name="Build.MergeAgain" xml:space="preserve">
+    <value>重新合并它们</value>
+  </data>
+  <data name="Common.OK" xml:space="preserve">
+    <value>确定</value>
+  </data>
+  <data name="Filters.Excluded" xml:space="preserve">
+    <value>已排除合并</value>
+  </data>
+  <data name="Loader.CommonMissingMasters" xml:space="preserve">
+    <value>最常见的缺失主文件：{0}。</value>
+  </data>
+  <data name="Loader.ConfirmPlugins" xml:space="preserve">
+    <value>请确认插件选择和加载顺序。</value>
+  </data>
+  <data name="Loader.GettingReady" xml:space="preserve">
+    <value>正在准备</value>
+  </data>
+  <data name="Loader.HoverHint" xml:space="preserve">
+    <value>将鼠标悬停在警告图标上查看详情。</value>
+  </data>
+  <data name="Loader.ManyUnloadable" xml:space="preserve">
+    <value>{0} 个已选插件无法加载。</value>
+  </data>
+  <data name="Loader.OneUnloadable" xml:space="preserve">
+    <value>已选择 {0}，但无法加载。</value>
+  </data>
+  <data name="Loader.ShowOnlyProblems" xml:space="preserve">
+    <value>仅显示无法加载的插件</value>
+  </data>
+  <data name="Loader.Unreadable" xml:space="preserve">
+    <value>{0} 个无法读取或已损坏。</value>
+  </data>
+  <data name="Nav.Build" xml:space="preserve">
+    <value>构建</value>
+  </data>
+  <data name="Nav.Build.Description" xml:space="preserve">
+    <value>检查你的选择并生成合并插件</value>
+  </data>
+  <data name="Nav.Log" xml:space="preserve">
+    <value>日志</value>
+  </data>
+  <data name="Nav.Log.Description" xml:space="preserve">
+    <value>用于排查问题的诊断输出</value>
+  </data>
+  <data name="Nav.Maintenance" xml:space="preserve">
+    <value>维护</value>
+  </data>
+  <data name="Nav.Maintenance.Description" xml:space="preserve">
+    <value>同步并修复已保存的 NPC 选择</value>
+  </data>
+  <data name="Nav.Profile" xml:space="preserve">
+    <value>配置</value>
+  </data>
+  <data name="Nav.Profile.Description" xml:space="preserve">
+    <value>为每个 NPC 选择外观</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>设置</value>
+  </data>
+  <data name="Nav.Settings.Description" xml:space="preserve">
+    <value>配置 EasyNPC Next 如何查找模组并生成输出</value>
+  </data>
+  <data name="Settings.Appearance" xml:space="preserve">
+    <value>外观</value>
+  </data>
+  <data name="Settings.BuildSettings" xml:space="preserve">
+    <value>构建设置</value>
+  </data>
+  <data name="Settings.ColorTheme" xml:space="preserve">
+    <value>颜色主题</value>
+  </data>
+  <data name="Settings.HardLinks" xml:space="preserve">
+    <value>使用硬链接代替复制合并文件（仅限同一磁盘）</value>
+  </data>
+  <data name="Settings.Language" xml:space="preserve">
+    <value>语言</value>
+  </data>
+  <data name="Settings.LanguageHint" xml:space="preserve">
+    <value>下次启动应用时生效。帮助文本和构建消息目前仍为英文。</value>
+  </data>
+  <data name="Settings.Paths" xml:space="preserve">
+    <value>路径</value>
+  </data>
+  <data name="Settings.PluginHeaderVersion" xml:space="preserve">
+    <value>插件头版本</value>
+  </data>
+  <data name="Settings.PluginsFile" xml:space="preserve">
+    <value>插件文件（plugins.txt）</value>
+  </data>
+  <data name="Startup.Exit" xml:space="preserve">
+    <value>退出</value>
+  </data>
+  <data name="Startup.InstalledAsMod" xml:space="preserve">
+    <value>被安装为模组</value>
+  </data>
+  <data name="Startup.OutsideModOrganizer" xml:space="preserve">
+    <value>未从 Mod Organizer 启动</value>
+  </data>
+  <data name="Startup.ProceedAnyway" xml:space="preserve">
+    <value>仍然继续</value>
+  </data>
+</root>

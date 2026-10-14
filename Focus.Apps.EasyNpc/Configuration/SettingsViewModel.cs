@@ -98,6 +98,65 @@ namespace Focus.Apps.EasyNpc.Configuration
             }
         }
 
+        public IReadOnlyList<LanguageOption> AvailableLanguages { get; } =
+            Localization.Loc.Languages.Select(x => new LanguageOption(x.Value, x.Name)).ToList();
+
+        // Applied at startup (Loc.Apply), so a change shows on the next start.
+        public LanguageOption Language
+        {
+            get => AvailableLanguages.FirstOrDefault(x => x.Value == settings.Language) ?? AvailableLanguages[0];
+            set
+            {
+                settings.Language = value?.Value ?? "System";
+                settings.Save();
+            }
+        }
+
+        public IReadOnlyList<string> AvailablePluginHeaderVersions { get; } = new[]
+        {
+            Providers.Mutagen.PluginHeaderVersions.Auto,
+            Providers.Mutagen.PluginHeaderVersions.Legacy,
+            Providers.Mutagen.PluginHeaderVersions.Extended,
+        };
+
+        public string PluginHeaderVersion
+        {
+            get => settings.PluginHeaderVersion;
+            set
+            {
+                settings.PluginHeaderVersion = value ?? Providers.Mutagen.PluginHeaderVersions.Auto;
+                settings.Save();
+            }
+        }
+
+        // Read at startup only, like the game folder; validated right away so a typo doesn't surface as "no mods".
+        public string PluginsFilePath
+        {
+            get => settings.PluginsFilePath;
+            set
+            {
+                settings.PluginsFilePath = value ?? string.Empty;
+                settings.Save();
+            }
+        }
+
+        [DependsOn(nameof(PluginsFilePath))]
+        public string PluginsFilePathWarning =>
+            !string.IsNullOrWhiteSpace(PluginsFilePath) && !File.Exists(PluginsFilePath) ?
+                "This file doesn't exist. EasyNPC would find no enabled plugins." : string.Empty;
+        [DependsOn(nameof(PluginsFilePath))]
+        public bool HasPluginsFilePathWarning => !string.IsNullOrEmpty(PluginsFilePathWarning);
+
+        public bool UseHardLinks
+        {
+            get => settings.UseHardLinks;
+            set
+            {
+                settings.UseHardLinks = value;
+                settings.Save();
+            }
+        }
+
         // Bound to the theme radio buttons via IsThemeSystem/Light/Dark. Applying the theme live is done by App, which
         // watches ThemeObservable.
         public string Theme
@@ -255,6 +314,18 @@ namespace Focus.Apps.EasyNpc.Configuration
                 GameDataDirectory = gameDataDirectory;
         }
 
+        public void SelectPluginsFile(Window owner)
+        {
+            var dialog = new VistaOpenFileDialog
+            {
+                Title = "Select the plugins.txt that holds your load order",
+                Filter = "plugins.txt|plugins.txt|Text files (*.txt)|*.txt",
+                CheckFileExists = true,
+            };
+            if (dialog.ShowDialog(owner).GetValueOrDefault())
+                PluginsFilePath = dialog.FileName;
+        }
+
         public void SelectModRootDirectory(Window owner)
         {
             const string description = "Select root directory where your individual mod directories are located";
@@ -410,4 +481,6 @@ namespace Focus.Apps.EasyNpc.Configuration
             Mugshots = mugshots;
         }
     }
+
+    public record LanguageOption(string Value, string Name);
 }

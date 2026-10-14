@@ -77,9 +77,13 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         // How many NPCs each setting would actually merge, so the trade-off is visible before building rather than
         // discovered afterwards in xEdit.
         public int TotalNpcCount => profile.Count;
-        [DependsOn(nameof(CustomizedNpcsOnly))]
-        public int IncludedNpcCount => CustomizedNpcsOnly ?
-            profile.Npcs.Count(x => x.IsCustomized || x.IsTemplated) : profile.Count;
+        [DependsOn(nameof(CustomizedNpcsOnly), nameof(ExcludedNpcCount))]
+        public int IncludedNpcCount => (CustomizedNpcsOnly ?
+            profile.Npcs.Where(x => x.IsCustomized || x.IsTemplated) : profile.Npcs)
+            .Count(x => !excludedNpcs.Contains(x));
+        // NPCs of this profile the user excluded from the merge.
+        public int ExcludedNpcCount { get; private set; }
+        public bool HasExcludedNpcs => ExcludedNpcCount > 0;
 
         public bool IsExistingMod { get; private set; }
         public bool IsValidDirectory { get; private set; }
@@ -122,16 +126,26 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         private readonly BehaviorSubject<ErrorLevel> overallErrorLevel = new(ErrorLevel.None);
         private readonly Profile profile;
         private readonly BehaviorSubject<int> texturePathExtractionTimeoutSec = new(0);
+        private readonly INpcExclusions exclusions;
+        private IReadOnlySet<IRecordKey> excludedNpcs = new HashSet<IRecordKey>(RecordKeyComparer.Default);
 
-        public OutputViewModel(IObservableModSettings modSettings, IFileSystem fs, ILogger log, Profile profile)
+        public OutputViewModel(
+            IObservableModSettings modSettings, IFileSystem fs, ILogger log, INpcExclusions exclusions,
+            Profile profile)
         {
+            this.exclusions = exclusions;
             this.fs = fs;
             this.profile = profile;
+            exclusions.Excluded.SubscribeSafe(log, set =>
+            {
+                excludedNpcs = set;
+                ExcludedNpcCount = profile.Npcs.Count(x => set.Contains(x));
+            });
             BuildSettings = Observable
                 .CombineLatest(
                     modSettings.RootDirectoryObservable, modName, enableArchiving, enableDewiggify,
                     texturePathExtractionTimeoutSec, generateRsvExclusions, keepFaceGenOutsideArchive,
-                    forwardCustomRaces, maxNpcsPerPlugin, customizedNpcsOnly, GetBuildSettings);
+                    forwardCustomRaces, maxNpcsPerPlugin, customizedNpcsOnly, exclusions.Excluded, GetBuildSettings);
             BuildSettings.SubscribeSafe(log, settings =>
             {
                 IsExistingMod = IsOutputDirectoryNonEmpty(settings);
@@ -143,7 +157,8 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         private BuildSettings GetBuildSettings(
             string modRootDirectory, string outputModName, bool enableArchiving,
             bool enableDewiggify, int texturePathExtractionTimeoutSec, bool generateRsvExclusions,
-            bool keepFaceGenOutsideArchive, bool forwardCustomRaces, int maxNpcsPerPlugin, bool customizedNpcsOnly)
+            bool keepFaceGenOutsideArchive, bool forwardCustomRaces, int maxNpcsPerPlugin, bool customizedNpcsOnly,
+            IReadOnlySet<IRecordKey> excludedNpcs)
         {
             outputModName = outputModName ?? "";
             var outputDirectory = Path.Combine(modRootDirectory, outputModName);
@@ -151,6 +166,7 @@ namespace Focus.Apps.EasyNpc.Build.Preview
             {
                 EnableArchiving = enableArchiving,
                 EnableDewiggify = enableDewiggify,
+                ExcludedNpcs = excludedNpcs,
                 GenerateRsvExclusions = generateRsvExclusions,
                 KeepFaceGenOutsideArchive = keepFaceGenOutsideArchive,
                 ForwardCustomRaces = forwardCustomRaces,
@@ -158,6 +174,11 @@ namespace Focus.Apps.EasyNpc.Build.Preview
                 NpcInclusion = customizedNpcsOnly ? NpcInclusion.CustomizedOnly : NpcInclusion.All,
                 TextureExtractionTimeoutSec = texturePathExtractionTimeoutSec,
             };
+        }
+
+        public void ClearExclusions()
+        {
+            exclusions.Clear();
         }
 
         private ErrorLevel GetErrorLevel()

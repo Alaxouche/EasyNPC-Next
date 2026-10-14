@@ -7,6 +7,7 @@
              xmlns:fa5="http://schemas.fontawesome.com/icons/"
              xmlns:local="clr-namespace:Focus.Apps.EasyNpc"
              xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
+             xmlns:loc="clr-namespace:Focus.Apps.EasyNpc.Localization"
              xmlns:ui="http://schemas.modernwpf.com/2019"
              d:DataContext="{d:DesignInstance Type=main:LoaderViewModel}"
              mc:Ignorable="d" 
@@ -22,7 +23,7 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <ui:ProgressRing Grid.Column="0" Width="32" Height="32" Margin="0,0,16,0" IsActive="True"/>
-                <TextBlock Grid.Column="1" FontSize="16" VerticalAlignment="Center">Getting things ready</TextBlock>
+                <TextBlock Grid.Column="1" FontSize="16" VerticalAlignment="Center" Text="{loc:Tr Loader.GettingReady}"/>
                 <local:TaskBubble Grid.Column="2" Margin="4" DataContext="{Binding ModIndexTask}"
                                   ToolTipService.InitialShowDelay="300"
                                   ToolTip="Indexes your installed mods so EasyNPC knows which plugins, FaceGen and textures each one provides."/>
@@ -33,24 +34,26 @@
                                   ToolTipService.InitialShowDelay="300"
                                   ToolTip="Loads your saved choices from the analysis, or builds a fresh profile on first run."/>
             </Grid>
-            <TextBlock DockPanel.Dock="Top" Margin="8" Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVisibility}}">
-                Confirm plugin selection and load order.
-            </TextBlock>
+            <TextBlock DockPanel.Dock="Top" Margin="8" Visibility="{Binding IsLoading, Converter={StaticResource InvBoolToVisibility}}"
+                       Text="{loc:Tr Loader.ConfirmPlugins}"/>
             <Grid DockPanel.Dock="Bottom">
                 <ui:SimpleStackPanel Margin="8" Orientation="Horizontal" Visibility="{Binding IsUnloadablePluginWarningVisible, Converter={StaticResource BoolToVisibility}}">
                     <fa5:SvgAwesome Foreground="{StaticResource SystemControlErrorTextForegroundBrush}" Icon="Solid_ExclamationTriangle" Height="20" VerticalAlignment="Center"/>
-                    <TextBlock FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource SystemControlErrorTextForegroundBrush}" Margin="8,0,0,0" VerticalAlignment="Center">
-                        Some plugins are selected but can't be loaded.
-                    </TextBlock>
+                    <TextBlock FontWeight="SemiBold" FontSize="14" Foreground="{StaticResource SystemControlErrorTextForegroundBrush}" Margin="8,0,0,0" VerticalAlignment="Center"
+                               TextWrapping="Wrap" MaxWidth="900"
+                               Text="{Binding UnloadablePluginSummary}"/>
                 </ui:SimpleStackPanel>
                 <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <Button Name="ConfirmLoad" Content="OK" Margin="8" Padding="4" Width="80" IsEnabled="{Binding CanLoad}" Style="{StaticResource AccentButtonStyle}" Click="ConfirmLoad_Click"/>
+                    <CheckBox Content="{loc:Tr Loader.ShowOnlyProblems}" Margin="8,0" VerticalAlignment="Center"
+                              IsChecked="{Binding ShowOnlyProblems}"
+                              Visibility="{Binding HasUnloadablePlugins, Converter={StaticResource BoolToVisibility}}"/>
+                    <Button Name="ConfirmLoad" Content="{loc:Tr Common.OK}" Margin="8" Padding="4" Width="80" IsEnabled="{Binding CanLoad}" Style="{StaticResource AccentButtonStyle}" Click="ConfirmLoad_Click"/>
                 </ui:SimpleStackPanel>
             </Grid>
             <Grid>
                 <DataGrid x:Name="LoadOrderGrid"
                           AutoGenerateColumns="False"
-                          ItemsSource="{Binding Path=Plugins}"
+                          ItemsSource="{Binding Path=DisplayedPlugins}"
                           Margin="8,0,8,0"
                           Visibility="{Binding Path=IsPluginListVisible, Converter={StaticResource BoolToVisibility}}"
                           d:Visibility="Collapsed"

@@ -49,13 +49,15 @@ namespace Focus.Providers.Mutagen.Tests
         }
 
         [Fact]
-        public void ArchiveOrder_ListsExistingBaseGameArchivesThenPerPluginArchivesInLoadOrder()
+        public void ArchiveOrder_ListsArchivesInPriorityOrder()
         {
             // The archive order is built by hand (Mutagen's own archive sort crashes in 0.53). Only archives that
-            // actually exist in the data folder are included: ini-listed base archives first, then each plugin's
-            // "<name>.bsa" and "<name> - Textures.bsa" in load order, and finally any archive whose name doesn't
-            // follow the "<plugin>.bsa" convention - those are still real content, so leaving them out made their
-            // textures and meshes look "missing" during a build.
+            // actually exist in the data folder are included. The list is in *priority* order - winner first - because
+            // that is what its consumers assume: the game loads ini-listed base archives first and then each plugin's
+            // "<name>.bsa" and "<name> - Textures.bsa" in load order, and the last archive loaded wins, so priority is
+            // that sequence reversed. Archives whose names don't follow the "<plugin>.bsa" convention come last: they
+            // are still real content (leaving them out made their textures and meshes look "missing" during a build)
+            // but the game doesn't load them on its own, so they must not override anything that it does.
             foreach (var name in new[]
             {
                 "ini1.bsa", "ini2.bsa",
@@ -73,7 +75,7 @@ namespace Focus.Providers.Mutagen.Tests
             Assert.Equal(
                 new[]
                 {
-                    "ini1.bsa", "ini2.bsa", "plugin1.bsa", "plugin1 - Textures.bsa", "plugin2.bsa", "unrelated.bsa",
+                    "plugin2.bsa", "plugin1 - Textures.bsa", "plugin1.bsa", "ini2.bsa", "ini1.bsa", "unrelated.bsa",
                 },
                 archiveOrder);
         }

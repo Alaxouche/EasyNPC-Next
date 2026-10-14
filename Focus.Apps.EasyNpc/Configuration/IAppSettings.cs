@@ -16,12 +16,20 @@ namespace Focus.Apps.EasyNpc.Configuration
         string GameRelease { get; }
         // Experimental: includes child NPCs in the profile so child overhauls can be merged. Off by default.
         bool IncludeChildNpcs { get; }
+        // UI language: "System", or a culture name such as "en", "fr", "zh-Hans".
+        string Language { get; }
+        // Plugin header version written into generated plugins: "Auto", "1.70" or "1.71".
+        string PluginHeaderVersion { get; }
+        // Explicit plugins.txt to read the load order from (empty = the game's own under %LocalAppData%).
+        string PluginsFilePath { get; }
         IEnumerable<MugshotRedirect> MugshotRedirects { get; }
         string MugshotsDirectory { get; }
         IEnumerable<IRecordKey> RaceTransformationKeys { get; }
         string StaticAssetsPath { get; }
         // "System", "Light" or "Dark". Controls the app color theme.
         string Theme { get; }
+        // Hard-link merged textures/meshes to the source files when on the same drive, instead of copying them.
+        bool UseHardLinks { get; }
         bool UseModManagerForModDirectory { get; }
     }
 
@@ -33,9 +41,13 @@ namespace Focus.Apps.EasyNpc.Configuration
         string GameDataDirectory { get; set; }
         string GameRelease { get; set; }
         bool IncludeChildNpcs { get; set; }
+        string Language { get; set; }
         IReadOnlyList<MugshotRedirect> MugshotRedirects { get; set; }
         string MugshotsDirectory { get; set; }
+        string PluginHeaderVersion { get; set; }
+        string PluginsFilePath { get; set; }
         string Theme { get; set; }
+        bool UseHardLinks { get; set; }
         bool UseModManagerForModDirectory { get; set; }
 
         void Save();

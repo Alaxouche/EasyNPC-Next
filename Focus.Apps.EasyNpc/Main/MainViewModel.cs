@@ -1,4 +1,5 @@
-﻿using Focus.Apps.EasyNpc.Build;
+﻿using Focus.Apps.EasyNpc.Localization;
+using Focus.Apps.EasyNpc.Build;
 using Focus.Apps.EasyNpc.Build.Preview;
 using Focus.Apps.EasyNpc.Configuration;
 using Focus.Apps.EasyNpc.Debug;
@@ -101,8 +102,8 @@ namespace Focus.Apps.EasyNpc.Main
             };
 
             settingsNavigationMenuItem =
-                new("Settings", Settings, typeof(SettingsPage), FontAwesome5.EFontAwesomeIcon.Solid_Cog,
-                    "Configure how EasyNPC Next finds your mods and builds output");
+                new(Loc.Get("Nav.Settings"), Settings, typeof(SettingsPage), FontAwesome5.EFontAwesomeIcon.Solid_Cog,
+                    Loc.Get("Nav.Settings.Description"));
 
             Content = isFirstLaunch ? Settings : Loader;
 
@@ -119,21 +120,21 @@ namespace Focus.Apps.EasyNpc.Main
                 NavigationMenuItems = new List<NavigationMenuItem>
                 {
                     new NavigationMenuItem(
-                        "Profile", Profile, typeof(ProfilePage), FontAwesome5.EFontAwesomeIcon.Solid_Users,
-                        "Choose each NPC's appearance"),
+                        Loc.Get("Nav.Profile"), Profile, typeof(ProfilePage), FontAwesome5.EFontAwesomeIcon.Solid_Users,
+                        Loc.Get("Nav.Profile.Description")),
                     new NavigationMenuItem(
-                        "Build", Build, typeof(BuildPage), FontAwesome5.EFontAwesomeIcon.Solid_Hammer,
-                        "Review your choices and generate the merged plugin"),
+                        Loc.Get("Nav.Build"), Build, typeof(BuildPage), FontAwesome5.EFontAwesomeIcon.Solid_Hammer,
+                        Loc.Get("Nav.Build.Description")),
                     new NavigationMenuItem(
-                        "Maintenance", Maintenance, typeof(MaintenancePage),
+                        Loc.Get("Nav.Maintenance"), Maintenance, typeof(MaintenancePage),
                         FontAwesome5.EFontAwesomeIcon.Solid_Wrench,
-                        "Sync and fix up your saved NPC choices"),
+                        Loc.Get("Nav.Maintenance.Description")),
                 }.AsReadOnly();
                 FooterNavigationMenuItems = new List<NavigationMenuItem>
                 {
                     new NavigationMenuItem(
-                        "Log", Log, typeof(LogPage), FontAwesome5.EFontAwesomeIcon.Solid_FileAlt,
-                        "Diagnostic output for troubleshooting"),
+                        Loc.Get("Nav.Log"), Log, typeof(LogPage), FontAwesome5.EFontAwesomeIcon.Solid_FileAlt,
+                        Loc.Get("Nav.Log.Description")),
                 }.AsReadOnly();
                 SelectedNavigationMenuItem = NavigationMenuItems[0];
 

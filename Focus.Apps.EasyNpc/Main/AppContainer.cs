@@ -45,6 +45,7 @@ namespace Focus.Apps.EasyNpc.Main
                     // edition decides which plugins.txt is read, so a GOG install read as the Steam edition silently
                     // loads the wrong load order.
                     GameId = FirstNonEmpty(options.GameName, Settings.Default.GameRelease, DefaultGameName),
+                    PluginsFilePath = NullIfEmpty(Settings.Default.PluginsFilePath),
                 })
                 .RegisterModule(new ProfilesModule
                 {

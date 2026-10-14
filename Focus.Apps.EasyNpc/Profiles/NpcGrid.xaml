@@ -30,6 +30,7 @@
                     <local:MiniSearchBox Text="{Binding Value, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" Grid.Row="1"/>
                 </Grid>
             </DataTemplate>
+            <profile:NpcExclusionConverter x:Key="IsExcluded"/>
             <Style x:Key="NpcDataGridHeaderStyle" TargetType="DataGridColumnHeader" BasedOn="{StaticResource DefaultDataGridColumnHeaderStyle}">
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Style.Resources>
@@ -39,6 +40,23 @@
                 </Style.Resources>
             </Style>
         </DataGrid.Resources>
+        <DataGrid.RowStyle>
+            <Style TargetType="DataGridRow" BasedOn="{StaticResource DefaultDataGridRowStyle}">
+                <Style.Triggers>
+                    <DataTrigger Value="True">
+                        <DataTrigger.Binding>
+                            <MultiBinding Converter="{StaticResource IsExcluded}">
+                                <Binding/>
+                                <Binding Path="DataContext.ExcludedNpcs" RelativeSource="{RelativeSource AncestorType=DataGrid}"/>
+                            </MultiBinding>
+                        </DataTrigger.Binding>
+                        <Setter Property="Foreground" Value="{DynamicResource SystemControlDisabledBaseMediumLowBrush}"/>
+                        <Setter Property="FontStyle" Value="Italic"/>
+                        <Setter Property="ToolTip" Value="Excluded from the merge (Batch menu to include it again)"/>
+                    </DataTrigger>
+                </Style.Triggers>
+            </Style>
+        </DataGrid.RowStyle>
         <DataGrid.Columns>
             <DataGridTextColumn HeaderStyle="{StaticResource NpcDataGridHeaderStyle}" Width="180" Binding="{Binding BasePluginName}">
                 <DataGridTextColumn.Header>

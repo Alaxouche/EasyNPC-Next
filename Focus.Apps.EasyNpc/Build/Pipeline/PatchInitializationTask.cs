@@ -23,13 +23,16 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
         public delegate PatchInitializationTask Factory();
 
         private readonly GameSelection game;
+        private readonly IPluginHeaderVersionProvider headerVersionProvider;
         private readonly RecordImporter.Factory importerFactory;
         private readonly IBuildReporter reporter;
 
         public PatchInitializationTask(
-            GameSelection game, IBuildReporter reporter, RecordImporter.Factory importerFactory)
+            GameSelection game, IBuildReporter reporter, RecordImporter.Factory importerFactory,
+            IPluginHeaderVersionProvider headerVersionProvider)
         {
             this.game = game;
+            this.headerVersionProvider = headerVersionProvider;
             this.importerFactory = importerFactory;
             this.reporter = reporter;
         }
@@ -39,8 +42,11 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             // Kind of lazy to purge the old report here, but the alternative is spamming another build task just for
             // this trivial thing, or putting it outside the build. Seems like the least bad option right now.
             reporter.Delete();
+            // The header version also decides where new FormIDs start (0x800 for 1.70), so it has to be fixed here,
+            // before any record is added, not patched in at save time.
             var mod = new SkyrimMod(
-                ModKey.FromNameAndExtension(FileStructure.MergeFileName), game.GameRelease.ToSkyrimRelease());
+                ModKey.FromNameAndExtension(FileStructure.MergeFileName), game.GameRelease.ToSkyrimRelease(),
+                headerVersionProvider.HeaderVersion);
             var importer = importerFactory(mod);
             return Task.FromResult(new Result(mod, importer));
         }

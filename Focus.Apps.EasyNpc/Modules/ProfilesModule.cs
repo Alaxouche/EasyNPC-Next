@@ -11,6 +11,7 @@ namespace Focus.Apps.EasyNpc.Modules
 
         protected override void Load(ContainerBuilder builder)
         {
+            builder.RegisterType<NpcExclusions>().As<INpcExclusions>().SingleInstance();
             if (string.IsNullOrEmpty(AutosavePath))
                 throw new InvalidOperationException($"{nameof(AutosavePath)} must be configured.");
 

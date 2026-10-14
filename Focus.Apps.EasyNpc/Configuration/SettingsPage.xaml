@@ -1,6 +1,7 @@
 ﻿<ui:Page x:Class="Focus.Apps.EasyNpc.Configuration.SettingsPage"
          xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
          xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Focus.Apps.EasyNpc.Localization"
          xmlns:fa5="http://schemas.fontawesome.com/icons/"
          xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
          xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
@@ -52,7 +53,7 @@
                         </TextBlock>
                     </ui:SimpleStackPanel>
                 </Border>
-                <GroupBox Header="Paths">
+                <GroupBox Header="{loc:Tr Settings.Paths}">
                     <ui:SimpleStackPanel>
                         <TextBlock Style="{StaticResource FormLabelStyle}">
                             Game Data Directory
@@ -97,6 +98,30 @@
                             Point this at your game's <Run FontStyle="Italic">Data</Run> folder (the one containing Skyrim.esm) if the game can't be detected
                             automatically - for example on Linux/Proton, a portable install, or a store that isn't recognized. A
                             <Run FontFamily="Consolas">-p</Run> argument from your mod manager still takes priority. Takes effect on the next start.
+                        </TextBlock>
+                        <TextBlock Style="{StaticResource FormLabelStyle}">
+                            <Run Text="{loc:Tr Settings.PluginsFile}"/>
+                            <TextBlock Foreground="{StaticResource MutedTextBrush}">(leave empty to use the game's own)</TextBlock>
+                        </TextBlock>
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="48"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBox Text="{Binding PluginsFilePath, UpdateSourceTrigger=PropertyChanged}" Grid.Column="0"/>
+                            <Button x:Name="PluginsFileSelectButton" Margin="8,0,0,0" Grid.Column="1" Click="PluginsFileSelectButton_Click">
+                                <fa5:SvgAwesome Icon="Regular_FolderOpen"/>
+                            </Button>
+                        </Grid>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Foreground="{StaticResource DangerForegroundBrush}"
+                                   Text="{Binding PluginsFilePathWarning, Mode=OneWay}"
+                                   Visibility="{Binding HasPluginsFilePathWarning, Converter={StaticResource BoolToVisibility}}"/>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,4,0,12"
+                                   Foreground="{StaticResource MutedTextBrush}">
+                            Only needed when EasyNPC shows vanilla faces only, or reads a different load order than your game:
+                            typically on Linux/Proton, where the app and the game can run in different prefixes. You can also point it
+                            straight at a Mod Organizer profile's <Run FontStyle="Italic">plugins.txt</Run>. Takes effect on the next start.
                         </TextBlock>
                         <TextBlock Style="{StaticResource FormLabelStyle}">
                             Mod Root Directory
@@ -219,7 +244,7 @@
                         </ui:SimpleStackPanel>
                     </ui:SimpleStackPanel>
                 </GroupBox>
-                <GroupBox Header="Build Settings" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                <GroupBox Header="{loc:Tr Settings.BuildSettings}" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
                     <ui:SimpleStackPanel>
                         <TextBlock Style="{StaticResource FormLabelStyle}" Margin="0,0,0,8" Text="Ignore Warnings"/>
                         <DataGrid x:Name="BuildWarningWhitelistGrid" AutoGenerateColumns="False" ItemsSource="{Binding BuildWarningWhitelist}">
@@ -273,6 +298,25 @@
                         <Button x:Name="AddBuildWarningSuppressionButton" HorizontalAlignment="Right" ToolTip="Add a new rule" Click="AddBuildWarningSuppressionButton_Click">
                             <fa5:SvgAwesome Icon="Solid_Plus" Width="16" Height="16" HorizontalAlignment="Center"/>
                         </Button>
+                        <ui:SimpleStackPanel Orientation="Horizontal" Margin="0,12,0,0" Spacing="8">
+                            <TextBlock Style="{StaticResource FormLabelStyle}" VerticalAlignment="Center" Text="{loc:Tr Settings.PluginHeaderVersion}"/>
+                            <ComboBox ItemsSource="{Binding AvailablePluginHeaderVersions, Mode=OneWay}"
+                                      SelectedItem="{Binding PluginHeaderVersion}"
+                                      MinWidth="120"/>
+                        </ui:SimpleStackPanel>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}">
+                            Skyrim 1.6.1130 and later use header 1.71. Older versions (1.5.97 up to 1.6.659) crash on 1.71 plugins unless
+                            Backported Extended ESL Support is installed, while 1.70 loads on every version.
+                            <Run FontWeight="SemiBold">Auto</Run> reads the version of your SkyrimSE.exe and picks the right one.
+                        </TextBlock>
+                        <CheckBox IsChecked="{Binding UseHardLinks}" Margin="0,12,0,0"
+                                  Content="{loc:Tr Settings.HardLinks}"/>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="28,4,0,0"
+                                   Foreground="{StaticResource MutedTextBrush}">
+                            Faster and uses no extra space. Turn it off if you run tools that rewrite files in place on the merge output
+                            (texture compressors, optimizers): a hard link shares the file with the source mod, which would be changed too.
+                        </TextBlock>
                     </ui:SimpleStackPanel>
                 </GroupBox>
                 <GroupBox Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
@@ -296,9 +340,16 @@
                         </TextBlock>
                     </ui:SimpleStackPanel>
                 </GroupBox>
-                <GroupBox Header="Appearance" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
+                <GroupBox Header="{loc:Tr Settings.Appearance}" Visibility="{Binding IsWelcomeScreen, Converter={StaticResource InvBoolToVisibility}}">
                     <ui:SimpleStackPanel>
-                        <TextBlock Text="Color theme" Style="{StaticResource FormLabelStyle}"/>
+                        <TextBlock Text="{loc:Tr Settings.Language}" Style="{StaticResource FormLabelStyle}"/>
+                        <ComboBox ItemsSource="{Binding AvailableLanguages, Mode=OneWay}"
+                                  SelectedItem="{Binding Language}"
+                                  DisplayMemberPath="Name"
+                                  MinWidth="200"/>
+                        <TextBlock Style="{StaticResource BodyTextBlockStyle}" TextWrapping="Wrap" Margin="0,4,0,12"
+                                   Foreground="{StaticResource MutedTextBrush}" Text="{loc:Tr Settings.LanguageHint}"/>
+                        <TextBlock Text="{loc:Tr Settings.ColorTheme}" Style="{StaticResource FormLabelStyle}"/>
                         <ui:SimpleStackPanel Orientation="Horizontal">
                             <RadioButton GroupName="Theme" Content="System" IsChecked="{Binding IsThemeSystem}"/>
                             <RadioButton GroupName="Theme" Content="Light" IsChecked="{Binding IsThemeLight}" Margin="16,0,0,0"/>

@@ -96,6 +96,40 @@ namespace Focus.Apps.EasyNpc.Profiles
                 "Batch: set default plugin", MessageBoxButton.OK, MessageBoxImage.Information);
         }
 
+        private void BatchExclude_Click(object sender, RoutedEventArgs e)
+        {
+            var count = Model.CountFilteredNpcs();
+            if (count == 0)
+                return;
+            var confirm = MessageBox.Show(
+                $"Leave the {count:N0} NPCs in the current filter out of the merge?\n\n" +
+                "They keep whatever the load order gives them in game. Use \"Include filtered NPCs in the merge again\" " +
+                "to undo, and the \"Excluded from merge\" filter to find them.",
+                "Batch: exclude from merge", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+            if (confirm != MessageBoxResult.OK)
+                return;
+            var excluded = Model.BatchExcludeFiltered();
+            MessageBox.Show(
+                $"{excluded:N0} NPC(s) excluded from the merge.",
+                "Batch: exclude from merge", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
+        private void BatchInclude_Click(object sender, RoutedEventArgs e)
+        {
+            var count = Model.CountFilteredExcluded();
+            if (count == 0)
+            {
+                MessageBox.Show(
+                    "None of the NPCs in the current filter are excluded.",
+                    "Batch: include in merge", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+            var included = Model.BatchIncludeFiltered();
+            MessageBox.Show(
+                $"{included:N0} NPC(s) will be merged again.",
+                "Batch: include in merge", MessageBoxButton.OK, MessageBoxImage.Information);
+        }
+
         private void BatchResetVanilla_Click(object sender, RoutedEventArgs e)
         {
             var count = Model.CountFilteredNpcs();

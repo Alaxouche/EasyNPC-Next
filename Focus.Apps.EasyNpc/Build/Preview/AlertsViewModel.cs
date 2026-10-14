@@ -1,5 +1,6 @@
 ﻿using Focus.Apps.EasyNpc.Build.Checks;
 using Focus.Apps.EasyNpc.Configuration;
+using Focus.Apps.EasyNpc.Messages;
 using Focus.Apps.EasyNpc.Profiles;
 using Focus.Apps.EasyNpc.Reports;
 using PropertyChanged;
@@ -26,11 +27,24 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         public IReadOnlyList<BuildWarning> NpcWarnings { get; private set; } = new List<BuildWarning>().AsReadOnly();
         public IObservable<ErrorLevel> OverallErrorLevel => overallErrorLevel;
         public BuildWarning? SelectedWarning { get; set; }
+        // When set, the detail list shows only this group's alerts.
+        public WarningGroup? SelectedGroup { get; set; }
+        public bool HasSelectedGroup => SelectedGroup is not null;
 
-        [DependsOn(nameof(GlobalWarnings), nameof(NpcWarnings))]
-        public IEnumerable<BuildWarning> Warnings => GetVisibleWarnings();
+        [DependsOn(nameof(GlobalWarnings), nameof(NpcWarnings), nameof(ExcludedNpcs))]
+        public IReadOnlyList<WarningGroup> WarningGroups => WarningGroup.FromWarnings(GetVisibleWarnings());
+
+        [DependsOn(nameof(GlobalWarnings), nameof(NpcWarnings), nameof(SelectedGroup), nameof(ExcludedNpcs))]
+        public IEnumerable<BuildWarning> Warnings => SelectedGroup is null ?
+            GetVisibleWarnings() : GetVisibleWarnings().Where(SelectedGroup.Contains);
+
+        // NPCs left out of the merge; their alerts are moot, so they're hidden.
+        public IReadOnlySet<IRecordKey> ExcludedNpcs { get; private set; } =
+            new HashSet<IRecordKey>(RecordKeyComparer.Default);
 
         private readonly IObservableAppSettings appSettings;
+        private readonly INpcExclusions exclusions;
+        private readonly IMessageBus messageBus;
         private readonly IObservable<BuildSettings> buildSettings;
         private readonly Subject<bool> disposed = new();
         private readonly IGameSettings gameSettings;
@@ -46,9 +60,12 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         public AlertsViewModel(
             IObservableAppSettings appSettings, IGameSettings gameSettings, IObservableModSettings modSettings,
             IEnumerable<IGlobalBuildCheck> globalChecks, IEnumerable<INpcBuildCheck> npcChecks, ILogger log,
-            Profile profile, IObservable<BuildSettings> buildSettings)
+            INpcExclusions exclusions, IMessageBus messageBus, Profile profile,
+            IObservable<BuildSettings> buildSettings)
         {
             this.appSettings = appSettings;
+            this.exclusions = exclusions;
+            this.messageBus = messageBus;
             this.buildSettings = buildSettings;
             this.gameSettings = gameSettings;
             this.globalChecks = globalChecks;
@@ -100,9 +117,42 @@ namespace Focus.Apps.EasyNpc.Build.Preview
                     UpdateResults();
                 });
             throttledBuildSettings.Connect();
+            exclusions.Excluded
+                .TakeUntil(disposed)
+                .SubscribeSafe(log, set =>
+                {
+                    ExcludedNpcs = set;
+                    UpdateResults();
+                });
             appSettings.BuildWarningWhitelistObservable
                 .TakeUntil(disposed)
                 .SubscribeSafe(log, _ => UpdateSummaryItems());
+        }
+
+        public void ClearGroupFilter()
+        {
+            SelectedGroup = null;
+        }
+
+        public int ExcludeGroupNpcs(WarningGroup group)
+        {
+            var excluded = exclusions.Exclude(group.NpcKeys);
+            if (SelectedGroup == group)
+                SelectedGroup = null;
+            return excluded;
+        }
+
+        // Opens the Profile page on the NPCs whose face comes from the group's plugin, where a batch action can pick
+        // another face for all of them at once.
+        public void OpenGroupInProfile(WarningGroup group)
+        {
+            if (!group.HasPlugin)
+                return;
+            messageBus.Send(new JumpToProfile(new JumpToProfile.FilterOverrides
+            {
+                FacePlugin = group.PluginName,
+                NonDlc = false,
+            }));
         }
 
         public void Dispose()
@@ -145,8 +195,10 @@ namespace Focus.Apps.EasyNpc.Build.Preview
                     suppressions[warning.PluginName].Contains(warning.Id.Value);
             }
 
+            var excluded = ExcludedNpcs;
             return GlobalWarnings.Concat(NpcWarnings)
                 .Where(x => !IsSuppressed(x))
+                .Where(x => x.RecordKey is null || !excluded.Contains(x.RecordKey))
                 .OrderByDescending(x => x.Severity)
                 .ThenBy(x => x.Id)
                 .ThenBy(x => x.PluginName, StringComparer.CurrentCultureIgnoreCase)
@@ -181,7 +233,9 @@ namespace Focus.Apps.EasyNpc.Build.Preview
         private void UpdateSummaryItems()
         {
             int criticalCount = 0, conflictCount = 0, otherCount = 0;
-            foreach (var warning in Warnings)
+            // The full visible list, not Warnings: that one is narrowed to the selected group.
+            var visibleWarnings = GetVisibleWarnings().ToList();
+            foreach (var warning in visibleWarnings)
             {
                 if (warning.Severity == BuildWarningSeverity.High)
                 {
@@ -199,7 +253,10 @@ namespace Focus.Apps.EasyNpc.Build.Preview
 
                 }
             }
-            var suppressedCount = GlobalWarnings.Count + NpcWarnings.Count - criticalCount - conflictCount - otherCount;
+            var excluded = ExcludedNpcs;
+            var excludedCount = GlobalWarnings.Concat(NpcWarnings)
+                .Count(x => x.RecordKey is not null && excluded.Contains(x.RecordKey));
+            var suppressedCount = GlobalWarnings.Count + NpcWarnings.Count - visibleWarnings.Count - excludedCount;
             HeaderSummaryItems = new SummaryItem[]
             {
                 new(PickCategory(criticalCount, SummaryItemCategory.StatusError), "Critical issues", criticalCount),

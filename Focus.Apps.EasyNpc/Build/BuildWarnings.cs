@@ -19,6 +19,9 @@ namespace Focus.Apps.EasyNpc.Build
         WigNotMatched,
         MultipleArchiveSources,
         FaceGenOverride,
+        PreviousMergeEnabled,
+        SkyPatcherAppearance,
+        MissingHeadPartMesh,
     }
 
     public enum BuildWarningSeverity
@@ -77,6 +80,9 @@ namespace Focus.Apps.EasyNpc.Build
             BuildWarningId.ModDirectoryNotSpecified => BuildWarningSeverity.High,
             BuildWarningId.MultipleArchiveSources => BuildWarningSeverity.Low,
             BuildWarningId.MultipleFaceGen => BuildWarningSeverity.Low,
+            BuildWarningId.PreviousMergeEnabled => BuildWarningSeverity.Medium,
+            BuildWarningId.SkyPatcherAppearance => BuildWarningSeverity.Medium,
+            BuildWarningId.MissingHeadPartMesh => BuildWarningSeverity.Medium,
             BuildWarningId.SelectedPluginRemoved => BuildWarningSeverity.Low,
             BuildWarningId.WigNotMatched => BuildWarningSeverity.Low,
             _ => BuildWarningSeverity.Unspecified,
@@ -144,6 +150,42 @@ namespace Focus.Apps.EasyNpc.Build
         public static string MultipleArchiveSources(string name, IEnumerable<string> providingMods)
         {
             return $"Archive '{name}' is provided by multiple mods: [{string.Join(", ", providingMods)}].";
+        }
+
+        public static string MissingHeadPartMesh(
+            string editorId, string name, string pluginName, IEnumerable<string> missingMeshes)
+        {
+            return
+                $"{NpcLabel(editorId, name)} gets head parts from '{pluginName}' whose meshes aren't installed: " +
+                $"[{string.Join(", ", missingMeshes)}]. Missing hair shows up as a bald NPC. These usually come from a " +
+                $"separate resource or hair mod the overhaul requires.";
+        }
+
+        public static string SkyPatcherAppearance(
+            string iniPath, IReadOnlyCollection<string> modNames, IEnumerable<string> operations,
+            IReadOnlyCollection<string> affectedNpcs, bool hasGroupFilter)
+        {
+            var source = modNames.Count > 0 ? $"'{iniPath}' (mod: {string.Join(", ", modNames)})" : $"'{iniPath}'";
+            var targets = new List<string>();
+            if (affectedNpcs.Count > 0)
+                targets.Add(
+                    $"{affectedNpcs.Count} NPC(s) whose face you chose here, e.g. " +
+                    string.Join(", ", affectedNpcs.Take(3)));
+            if (hasGroupFilter)
+                targets.Add("a group of NPCs selected by faction, race or another filter");
+            var targetText = targets.Count > 0 ? string.Join(" and ", targets) : "NPCs not in your profile";
+            return
+                $"SkyPatcher file {source} changes NPC appearance at runtime ({string.Join(", ", operations)}) for " +
+                $"{targetText}. It applies after all plugins load, so it overrides the merge for those NPCs, and a " +
+                $"changed face no longer matches the merged FaceGen. Disable it, or keep only one of the two.";
+        }
+
+        public static string PreviousMergeEnabled(string modName)
+        {
+            return
+                $"Mod '{modName}' holds an earlier EasyNPC merge and is still enabled. Disable it before playing with " +
+                $"the new merge: its FaceGen files override the new ones, which shows up as FaceGen conflicts in " +
+                $"Verify and wrong or missing faces in game.";
         }
 
         public static string SelectedPluginRemoved(string editorId, string name, string fieldName, string pluginName)

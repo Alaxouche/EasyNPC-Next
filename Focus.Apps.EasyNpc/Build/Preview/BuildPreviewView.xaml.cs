@@ -40,6 +40,45 @@ namespace Focus.Apps.EasyNpc.Build.Preview
             BuildClick?.Invoke(this, EventArgs.Empty);
         }
 
+        private void ClearExclusionsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var confirm = MessageBox.Show(
+                $"Merge all {Model.Output.ExcludedNpcCount:N0} excluded NPC(s) again?",
+                "Excluded NPCs", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+            if (confirm == MessageBoxResult.OK)
+                Model.Output.ClearExclusions();
+        }
+
+        private void ShowWarningGroup_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is WarningGroup group)
+                Model.Alerts.SelectedGroup = group;
+        }
+
+        private void ClearWarningGroup_Click(object sender, RoutedEventArgs e)
+        {
+            Model.Alerts.ClearGroupFilter();
+        }
+
+        private void OpenWarningGroup_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is WarningGroup group)
+                Model.Alerts.OpenGroupInProfile(group);
+        }
+
+        private void ExcludeWarningGroup_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is not WarningGroup group)
+                return;
+            var confirm = MessageBox.Show(
+                $"Leave the {group.NpcKeys.Count:N0} NPC(s) behind \"{group.Title}\" out of the merge?\n\n" +
+                "They keep whatever the load order gives them in game. You can merge them again from the Profile page " +
+                "(Batch menu) or with \"Merge them again\" in the Build Settings.",
+                "Exclude from merge", MessageBoxButton.OKCancel, MessageBoxImage.Question);
+            if (confirm == MessageBoxResult.OK)
+                Model.Alerts.ExcludeGroupNpcs(group);
+        }
+
         private void ContentScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             if (DataContext is null)

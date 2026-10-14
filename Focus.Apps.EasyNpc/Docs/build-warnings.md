@@ -25,6 +25,19 @@ The types of checks and warnings currently implemented include:
   - The consequences of this are the same as not specifying a mod directory at all.
   - Resolve by updating this setting, reconnecting the drive, etc.
 
+- `SkyPatcherAppearance` - A SkyPatcher INI (`SKSE\Plugins\SkyPatcher\npc\...`) changes what NPCs look like at runtime: `copyVisualStyle`, `setRandomVisualStyle`, `addRandomVisualStyle`, `race`, `skin`, or the `traits` template flag.
+  - SkyPatcher applies its edits after every plugin has loaded, so it wins over the merge for the NPCs it targets. When it changes a face, that face no longer matches the FaceGen the merge built, which is how "SkyPatcher replacer + EasyNPC" ends up with dark or broken faces.
+  - The warning names the INI, the mod it comes from, and the NPCs from your profile it targets (or says it targets a whole group).
+  - To resolve, choose one: disable the SkyPatcher replacer for those NPCs, or leave those NPCs on the face the SkyPatcher replacer expects.
+
+- `MissingHeadPartMesh` - The face chosen for an NPC uses head parts (hair, brows, beards...) whose mesh files are not installed in any mod.
+  - Missing hair is the usual cause of bald NPCs after a merge. Many overhauls require a separate hair or resource mod (KS Hairdos, a "Resources" download, etc.) that is easy to miss or disable.
+  - To resolve, install and enable the resource mod the overhaul lists as a requirement, or pick a different face for that NPC.
+
+- `PreviousMergeEnabled` - Another mod that contains an earlier EasyNPC merge (`NPC Appearances Merged.esp`) is still enabled, and you are building into a different mod.
+  - The earlier merge keeps its FaceGen files as loose files by default, and a loose file always beats one inside a BSA, whatever the mod order. The old faces then win over the new ones: Verify reports FaceGen conflicts and some NPCs look wrong in game.
+  - To resolve, disable the old merge mod (or delete it once the new one works), or build into the same mod to replace it.
+
 - `MultipleArchiveSources` - Some required assets are in a BSA (archive), and more than one mod has that archive
   - This is very commonly a false positive if you make backups of mods, or have multiple versions of a mod but only use one. EasyNPC doesn't know which ones are enabled, so it reports a conflict.
   - During the build, the specific archive that is actually used will be the one that "wins" in your mod order, i.e. belongs to the mod with highest priority/lowest order. If multiple mods providing the archive are all installed _and enabled_, this may not be correct.

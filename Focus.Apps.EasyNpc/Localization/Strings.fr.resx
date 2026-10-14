@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="Alerts.ByCause" xml:space="preserve">
+    <value>Par cause : une ligne par problème et par plugin, avec la correction qui s'applique à tous ses PNJ.</value>
+  </data>
+  <data name="Alerts.ExcludeNpcs" xml:space="preserve">
+    <value>Exclure ces PNJ</value>
+  </data>
+  <data name="Alerts.PickOtherFaces" xml:space="preserve">
+    <value>Choisir d'autres visages</value>
+  </data>
+  <data name="Alerts.Show" xml:space="preserve">
+    <value>Afficher</value>
+  </data>
+  <data name="Alerts.ShowAll" xml:space="preserve">
+    <value>Tout afficher</value>
+  </data>
+  <data name="Alerts.ShowingOnly" xml:space="preserve">
+    <value>Affichage limité à :</value>
+  </data>
+  <data name="Batch.AutoAssign" xml:space="preserve">
+    <value>Attribuer les visages recommandés à tous les PNJ filtrés</value>
+  </data>
+  <data name="Batch.Button" xml:space="preserve">
+    <value>Actions groupées</value>
+  </data>
+  <data name="Batch.Exclude" xml:space="preserve">
+    <value>Exclure les PNJ filtrés du merge</value>
+  </data>
+  <data name="Batch.Include" xml:space="preserve">
+    <value>Réintégrer les PNJ filtrés dans le merge</value>
+  </data>
+  <data name="Batch.ResetVanilla" xml:space="preserve">
+    <value>Remettre tous les PNJ filtrés en vanilla</value>
+  </data>
+  <data name="Batch.Tooltip" xml:space="preserve">
+    <value>Appliquer une action à tous les PNJ du filtre actuel</value>
+  </data>
+  <data name="Build.ChangeFace" xml:space="preserve">
+    <value>Changer le visage</value>
+  </data>
+  <data name="Build.MergeAgain" xml:space="preserve">
+    <value>Les fusionner à nouveau</value>
+  </data>
+  <data name="Common.OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Filters.Excluded" xml:space="preserve">
+    <value>Exclus du merge</value>
+  </data>
+  <data name="Loader.CommonMissingMasters" xml:space="preserve">
+    <value>Masters manquants les plus fréquents : {0}.</value>
+  </data>
+  <data name="Loader.ConfirmPlugins" xml:space="preserve">
+    <value>Confirmez la sélection des plugins et l'ordre de chargement.</value>
+  </data>
+  <data name="Loader.GettingReady" xml:space="preserve">
+    <value>Préparation en cours</value>
+  </data>
+  <data name="Loader.HoverHint" xml:space="preserve">
+    <value>Survolez les icônes d'alerte pour le détail.</value>
+  </data>
+  <data name="Loader.ManyUnloadable" xml:space="preserve">
+    <value>{0} plugins sélectionnés ne peuvent pas être chargés.</value>
+  </data>
+  <data name="Loader.OneUnloadable" xml:space="preserve">
+    <value>{0} est sélectionné mais ne peut pas être chargé.</value>
+  </data>
+  <data name="Loader.ShowOnlyProblems" xml:space="preserve">
+    <value>N'afficher que les plugins non chargeables</value>
+  </data>
+  <data name="Loader.Unreadable" xml:space="preserve">
+    <value>{0} illisible(s) ou corrompu(s).</value>
+  </data>
+  <data name="Nav.Build" xml:space="preserve">
+    <value>Génération</value>
+  </data>
+  <data name="Nav.Build.Description" xml:space="preserve">
+    <value>Vérifier vos choix et générer le plugin fusionné</value>
+  </data>
+  <data name="Nav.Log" xml:space="preserve">
+    <value>Journal</value>
+  </data>
+  <data name="Nav.Log.Description" xml:space="preserve">
+    <value>Journal de diagnostic pour le dépannage</value>
+  </data>
+  <data name="Nav.Maintenance" xml:space="preserve">
+    <value>Maintenance</value>
+  </data>
+  <data name="Nav.Maintenance.Description" xml:space="preserve">
+    <value>Synchroniser et réparer vos choix de PNJ enregistrés</value>
+  </data>
+  <data name="Nav.Profile" xml:space="preserve">
+    <value>Profil</value>
+  </data>
+  <data name="Nav.Profile.Description" xml:space="preserve">
+    <value>Choisir l'apparence de chaque PNJ</value>
+  </data>
+  <data name="Nav.Settings" xml:space="preserve">
+    <value>Réglages</value>
+  </data>
+  <data name="Nav.Settings.Description" xml:space="preserve">
+    <value>Configurer comment EasyNPC Next trouve vos mods et génère le merge</value>
+  </data>
+  <data name="Settings.Appearance" xml:space="preserve">
+    <value>Apparence</value>
+  </data>
+  <data name="Settings.BuildSettings" xml:space="preserve">
+    <value>Réglages du build</value>
+  </data>
+  <data name="Settings.ColorTheme" xml:space="preserve">
+    <value>Thème de couleur</value>
+  </data>
+  <data name="Settings.HardLinks" xml:space="preserve">
+    <value>Créer des liens physiques au lieu de copier les fichiers (même disque uniquement)</value>
+  </data>
+  <data name="Settings.Language" xml:space="preserve">
+    <value>Langue</value>
+  </data>
+  <data name="Settings.LanguageHint" xml:space="preserve">
+    <value>Pris en compte au prochain démarrage. Les textes d'aide et les messages du build restent en anglais pour l'instant.</value>
+  </data>
+  <data name="Settings.Paths" xml:space="preserve">
+    <value>Chemins</value>
+  </data>
+  <data name="Settings.PluginHeaderVersion" xml:space="preserve">
+    <value>Version d'en-tête des plugins</value>
+  </data>
+  <data name="Settings.PluginsFile" xml:space="preserve">
+    <value>Fichier des plugins (plugins.txt)</value>
+  </data>
+  <data name="Startup.Exit" xml:space="preserve">
+    <value>Quitter</value>
+  </data>
+  <data name="Startup.InstalledAsMod" xml:space="preserve">
+    <value>Installé comme un mod</value>
+  </data>
+  <data name="Startup.OutsideModOrganizer" xml:space="preserve">
+    <value>Non lancé depuis Mod Organizer</value>
+  </data>
+  <data name="Startup.ProceedAnyway" xml:space="preserve">
+    <value>Continuer quand même</value>
+  </data>
+</root>

@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="Focus.Apps.EasyNpc.Build.Preview.BuildPreviewView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Focus.Apps.EasyNpc.Localization"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:bp="clr-namespace:Focus.Apps.EasyNpc.Build.Preview"
@@ -443,6 +444,59 @@
                             <TextBlock FontSize="18">Alert Details</TextBlock>
                         </Expander.Header>
                         <ui:SimpleStackPanel Margin="0,4,0,0">
+                            <TextBlock Style="{StaticResource CaptionTextBlockStyle}" Foreground="{StaticResource MutedTextBrush}" Margin="0,0,0,4"
+                                       Visibility="{Binding Alerts.WarningGroups.Count, Converter={StaticResource HiddenWhen}, ConverterParameter=0}"
+                                       Text="{loc:Tr Alerts.ByCause}"/>
+                            <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto" Margin="0,0,0,8">
+                                <ItemsControl ItemsSource="{Binding Alerts.WarningGroups}">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="0,2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Border Grid.Column="0" MinWidth="40" Padding="6,1" CornerRadius="9" VerticalAlignment="Center">
+                                                    <Border.Style>
+                                                        <Style TargetType="Border">
+                                                            <Setter Property="Background" Value="{StaticResource GroupBorderBrush}"/>
+                                                            <Style.Triggers>
+                                                                <DataTrigger Binding="{Binding Severity}" Value="High">
+                                                                    <Setter Property="Background" Value="{StaticResource NpcFilterUnmoddableBackgroundBrush}"/>
+                                                                </DataTrigger>
+                                                                <DataTrigger Binding="{Binding Severity}" Value="Medium">
+                                                                    <Setter Property="Background" Value="{StaticResource NpcFilterUnmoddedBackgroundBrush}"/>
+                                                                </DataTrigger>
+                                                            </Style.Triggers>
+                                                        </Style>
+                                                    </Border.Style>
+                                                    <TextBlock Text="{Binding Count}" HorizontalAlignment="Center" FontWeight="SemiBold"/>
+                                                </Border>
+                                                <TextBlock Grid.Column="1" Text="{Binding Title}" Margin="8,0" VerticalAlignment="Center"
+                                                           TextTrimming="CharacterEllipsis" ToolTip="{Binding Title}"/>
+                                                <ui:SimpleStackPanel Grid.Column="2" Orientation="Horizontal" Spacing="4">
+                                                    <Button Content="{loc:Tr Alerts.Show}" Padding="8,2" Tag="{Binding}" Click="ShowWarningGroup_Click"
+                                                            ToolTip="Show only these alerts in the list below"/>
+                                                    <Button Content="{loc:Tr Alerts.PickOtherFaces}" Padding="8,2" Tag="{Binding}" Click="OpenWarningGroup_Click"
+                                                            ToolTip="Open the Profile page on the NPCs whose face comes from this plugin, to pick another face (Batch menu works there)"
+                                                            Visibility="{Binding CanOpenInProfile, Converter={StaticResource BoolToVisibility}}"/>
+                                                    <Button Content="{loc:Tr Alerts.ExcludeNpcs}" Padding="8,2" Tag="{Binding}" Click="ExcludeWarningGroup_Click"
+                                                            ToolTip="Leave these NPCs out of the merge. Undo from the Profile page Batch menu, or the Build Settings."
+                                                            Visibility="{Binding HasNpcs, Converter={StaticResource BoolToVisibility}}"/>
+                                                </ui:SimpleStackPanel>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
+                            </ScrollViewer>
+                            <ui:SimpleStackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4"
+                                                 Visibility="{Binding Alerts.HasSelectedGroup, Converter={StaticResource BoolToVisibility}}">
+                                <TextBlock VerticalAlignment="Center">
+                                    <Run Text="{loc:Tr Alerts.ShowingOnly}"/> <Run FontWeight="SemiBold" Text="{Binding Alerts.SelectedGroup.Title, Mode=OneWay}"/>
+                                </TextBlock>
+                                <Button Content="{loc:Tr Alerts.ShowAll}" Padding="8,2" Click="ClearWarningGroup_Click"/>
+                            </ui:SimpleStackPanel>
                             <ListBox x:Name="WarningsListBox"
                                      Background="{StaticResource SystemControlPageBackgroundTransparentBrush}"
                                      BorderBrush="{StaticResource GroupBorderBrush}"
@@ -645,6 +699,13 @@
                                     <Run Text="{Binding Output.IncludedNpcCount, Mode=OneWay}" d:Text="23"/> of
                                     <Run Text="{Binding Output.TotalNpcCount, Mode=OneWay}" d:Text="4239"/> NPCs will be merged.
                                 </TextBlock>
+                                <ui:SimpleStackPanel Orientation="Horizontal" Margin="24,2,0,0" Spacing="8"
+                                                     Visibility="{Binding Output.HasExcludedNpcs, Converter={StaticResource BoolToVisibility}}">
+                                    <TextBlock Foreground="{StaticResource MutedTextBrush}" Style="{StaticResource CaptionTextBlockStyle}" VerticalAlignment="Center">
+                                        <Run Text="{Binding Output.ExcludedNpcCount, Mode=OneWay}" d:Text="12"/> NPC(s) excluded on the Profile page (Batch menu).
+                                    </TextBlock>
+                                    <Button x:Name="ClearExclusionsButton" Content="{loc:Tr Build.MergeAgain}" Padding="8,2" Click="ClearExclusionsButton_Click"/>
+                                </ui:SimpleStackPanel>
                                 <TextBlock Text="Texture path extraction timeout (seconds, per file)" Style="{StaticResource LoweredFormLabelStyle}"/>
                                 <ui:SimpleStackPanel Orientation="Horizontal">
                                     <ui:NumberBox Width="100" Value="{Binding Output.TexturePathExtractionTimeoutSec}" Minimum="0" Maximum="300" SpinButtonPlacementMode="Compact"/>

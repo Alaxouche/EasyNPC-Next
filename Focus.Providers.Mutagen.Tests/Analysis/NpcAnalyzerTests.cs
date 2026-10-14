@@ -107,6 +107,112 @@ namespace Focus.Providers.Mutagen.Tests.Analysis
                 analysis.MainHeadParts.OrderBy(x => x.BasePluginName).ThenBy(x => x.LocalFormIdHex));
         }
 
+        // "Misc" is the game's catch-all slot and an NPC routinely carries several of them at once: mouths, eyelashes,
+        // hairlines, shaved-hair pieces, beard stubble. Dropping one leaves the game falling back to the race default
+        // for that slot, whose morph data then drives a mesh baked for a different part - and reads past its vertices.
+        [Fact]
+        public void KeepsEveryMiscHeadPartOfAnNpc()
+        {
+            var vanillaHeadPartKeys = Groups.AddRecords<HeadPart>(
+                "vanilla.esp",
+                x => { x.EditorID = "VanillaFace"; x.Type = HeadPart.TypeEnum.Face; },
+                x => { x.EditorID = "VanillaMouth"; x.Type = HeadPart.TypeEnum.Misc; });
+            var raceKeys = Groups.AddRecords<Race>(
+                "vanilla.esp", r => r.HeadData = CreateHeadData(vanillaHeadPartKeys.ToFormKeys(), false));
+            var moddedHeadPartKeys = Groups.AddRecords<HeadPart>(
+                "mod.esp",
+                x => { x.EditorID = "ModdedFace"; x.Type = HeadPart.TypeEnum.Face; },
+                x => { x.EditorID = "ModdedMouth"; x.Type = HeadPart.TypeEnum.Misc; },
+                x => { x.EditorID = "ModdedEyelashes"; x.Type = HeadPart.TypeEnum.Misc; });
+            var npcKeys = Groups.AddRecords<Npc>("mod.esp", npc =>
+            {
+                npc.Race.SetTo(raceKeys[0].ToFormKey());
+                npc.HeadParts.AddRange(moddedHeadPartKeys.ToFormKeys());
+            });
+            var analysis = Analyzer.Analyze("mod.esp", npcKeys[0]);
+
+            Assert.Equal(
+                new[]
+                {
+                    moddedHeadPartKeys[0], // Face
+                    moddedHeadPartKeys[1], // Mouth
+                    moddedHeadPartKeys[2], // Eyelashes
+                },
+                // Hack until we get Assert.Equivalent
+                analysis.MainHeadParts.OrderBy(x => x.BasePluginName).ThenBy(x => x.LocalFormIdHex));
+        }
+
+        // The race default only fills a slot the NPC says nothing about. An NPC that brings its own part of a type
+        // replaces the race's; it doesn't end up wearing both.
+        [Fact]
+        public void WhenNpcProvidesAHeadPartType_DoesNotAlsoKeepTheRaceDefaultsOfThatType()
+        {
+            var vanillaHeadPartKeys = Groups.AddRecords<HeadPart>(
+                "vanilla.esp",
+                x => { x.EditorID = "VanillaFace"; x.Type = HeadPart.TypeEnum.Face; },
+                x => { x.EditorID = "VanillaMouth"; x.Type = HeadPart.TypeEnum.Misc; },
+                x => { x.EditorID = "VanillaHairline"; x.Type = HeadPart.TypeEnum.Misc; },
+                x => { x.EditorID = "VanillaEyes"; x.Type = HeadPart.TypeEnum.Eyes; });
+            var raceKeys = Groups.AddRecords<Race>(
+                "vanilla.esp", r => r.HeadData = CreateHeadData(vanillaHeadPartKeys.ToFormKeys(), false));
+            var moddedHeadPartKeys = Groups.AddRecords<HeadPart>(
+                "mod.esp",
+                x => { x.EditorID = "ModdedMouth"; x.Type = HeadPart.TypeEnum.Misc; });
+            var npcKeys = Groups.AddRecords<Npc>("mod.esp", npc =>
+            {
+                npc.Race.SetTo(raceKeys[0].ToFormKey());
+                npc.HeadParts.AddRange(moddedHeadPartKeys.ToFormKeys());
+            });
+            var analysis = Analyzer.Analyze("mod.esp", npcKeys[0]);
+
+            Assert.Equal(
+                new[]
+                {
+                    moddedHeadPartKeys[0], // Mouth, replacing both of the race's Misc parts
+                    vanillaHeadPartKeys[0], // Face
+                    vanillaHeadPartKeys[3], // Eyes
+                },
+                // Hack until we get Assert.Equivalent
+                analysis.MainHeadParts.OrderBy(x => x.BasePluginName).ThenBy(x => x.LocalFormIdHex));
+        }
+
+        // The FaceGen a plugin ships was baked with the head parts that plugin sees, so the race defaults filling a
+        // slot the NPC leaves empty have to be read from that plugin's own view of the race - not from whatever patch
+        // happens to win the race record. Overhauls keep the vanilla editor IDs while repointing a race's default
+        // mouth or eyes at their own high-poly parts, and a part with the right name but the wrong geometry is what
+        // drives a baked shape with a morph table of the wrong length: a mesh exploding across the scene, and a crash.
+        [Fact]
+        public void WhenFacePluginOverridesTheRace_ItsOwnHeadPartDefaultsAreUsed()
+        {
+            var vanillaHeadPartKeys = Groups.AddRecords<HeadPart>(
+                "vanilla.esp",
+                x => { x.EditorID = "VanillaFace"; x.Type = HeadPart.TypeEnum.Face; },
+                x => { x.EditorID = "MaleMouthHumanoidDefault"; x.Type = HeadPart.TypeEnum.Misc; });
+            var raceKeys = Groups.AddRecords<Race>(
+                "vanilla.esp", r => r.HeadData = CreateHeadData(vanillaHeadPartKeys.ToFormKeys(), false));
+            // Same editor ID as the vanilla mouth, its own record: this is what an overhaul ships, and what its
+            // FaceGen bakes the mouth shape from.
+            var moddedHeadPartKeys = Groups.AddRecords<HeadPart>(
+                "mod.esp",
+                x => { x.EditorID = "MaleMouthHumanoidDefault"; x.Type = HeadPart.TypeEnum.Misc; });
+            Groups.AddOverride<Race>("mod.esp", raceKeys[0], r => r.HeadData = CreateHeadData(
+                new[] { vanillaHeadPartKeys[0].ToFormKey(), moddedHeadPartKeys[0].ToFormKey() }, false));
+            // A later patch puts the vanilla mouth back as the race default and wins the race record.
+            Groups.AddOverride<Race>("patch.esp", raceKeys[0], r => r.HeadData = CreateHeadData(
+                vanillaHeadPartKeys.ToFormKeys(), false));
+            var npcKeys = Groups.AddRecords<Npc>("mod.esp", npc => npc.Race.SetTo(raceKeys[0].ToFormKey()));
+            var analysis = Analyzer.Analyze("mod.esp", npcKeys[0]);
+
+            Assert.Equal(
+                new[]
+                {
+                    moddedHeadPartKeys[0], // The overhaul's mouth, which its FaceGen was baked with
+                    vanillaHeadPartKeys[0], // Face, which the overhaul leaves alone
+                },
+                // Hack until we get Assert.Equivalent
+                analysis.MainHeadParts.OrderBy(x => x.BasePluginName).ThenBy(x => x.LocalFormIdHex));
+        }
+
         [Fact]
         public void WhenConfigExcludesFemaleFlag_IsFemale_IsTrue()
         {

@@ -59,10 +59,40 @@ namespace Focus.Apps.EasyNpc.Configuration
             set => includeChildNpcs.OnNext(value);
         }
 
+        public string Language
+        {
+            get => language.Value;
+            set => language.OnNext(value);
+        }
+
+        // Header version of the generated plugins. Game versions before 1.6.1130 crash on 1.71 plugins unless Backported
+        // Extended ESL Support is installed, while 1.70 loads everywhere; "Auto" picks from the game executable's version.
+        public string PluginHeaderVersion
+        {
+            get => pluginHeaderVersion.Value;
+            set => pluginHeaderVersion.OnNext(value);
+        }
+
+        // Explicit plugins.txt, for setups where the game's own copy under %LocalAppData% isn't the one in use: Linux/Proton
+        // (the app and the game in different prefixes), or pointing straight at a Mod Organizer profile. Empty = default.
+        public string PluginsFilePath
+        {
+            get => pluginsFilePath.Value;
+            set => pluginsFilePath.OnNext(value);
+        }
+
         public string Theme
         {
             get => theme.Value;
             set => theme.OnNext(value);
+        }
+
+        // Off for people who post-process the merge with tools that rewrite files in place: a hard link shares the file
+        // with the source mod, so the source mod would be changed too.
+        public bool UseHardLinks
+        {
+            get => useHardLinks.Value;
+            set => useHardLinks.OnNext(value);
         }
 
         public IReadOnlyList<MugshotRedirect> MugshotRedirects
@@ -115,7 +145,11 @@ namespace Focus.Apps.EasyNpc.Configuration
         private readonly BehaviorSubject<string> gameDataDirectory = new(string.Empty);
         private readonly BehaviorSubject<string> gameRelease = new(string.Empty);
         private readonly BehaviorSubject<bool> includeChildNpcs = new(false);
+        private readonly BehaviorSubject<string> language = new("System");
+        private readonly BehaviorSubject<string> pluginHeaderVersion = new("Auto");
+        private readonly BehaviorSubject<string> pluginsFilePath = new(string.Empty);
         private readonly BehaviorSubject<string> theme = new("System");
+        private readonly BehaviorSubject<bool> useHardLinks = new(true);
         private readonly BehaviorSubject<IReadOnlyList<MugshotRedirect>> mugshotRedirects =
             new(GetDefaultMugshotRedirects());
         private readonly BehaviorSubject<string> mugshotsDirectory = new(string.Empty);
@@ -149,11 +183,15 @@ namespace Focus.Apps.EasyNpc.Configuration
                 GameDataDirectory = GameDataDirectory,
                 GameRelease = GameRelease,
                 IncludeChildNpcs = IncludeChildNpcs,
+                Language = Language,
                 ModRootDirectory = DefaultModRootDirectory,
                 MugshotRedirects = MugshotRedirects,
                 MugshotsDirectory = MugshotsDirectory,
+                PluginHeaderVersion = PluginHeaderVersion,
+                PluginsFilePath = PluginsFilePath,
                 RaceTransformationKeys = RaceTransformationKeys.Select(x => x.ToString()).ToList(),
                 Theme = Theme,
+                UseHardLinks = UseHardLinks,
                 UseModManagerForModDirectory = UseModManagerForModDirectory,
             };
             data.SaveToFile(path);
@@ -171,8 +209,16 @@ namespace Focus.Apps.EasyNpc.Configuration
                 GameRelease = data.GameRelease;
             if (data.IncludeChildNpcs.HasValue)
                 IncludeChildNpcs = data.IncludeChildNpcs.Value;
+            if (!string.IsNullOrEmpty(data.Language))
+                Language = data.Language;
+            if (!string.IsNullOrEmpty(data.PluginHeaderVersion))
+                PluginHeaderVersion = data.PluginHeaderVersion;
+            if (!string.IsNullOrEmpty(data.PluginsFilePath))
+                PluginsFilePath = data.PluginsFilePath;
             if (!string.IsNullOrEmpty(data.Theme))
                 Theme = data.Theme;
+            if (data.UseHardLinks.HasValue)
+                UseHardLinks = data.UseHardLinks.Value;
             if (!string.IsNullOrEmpty(data.ModRootDirectory))
                 DefaultModRootDirectory = data.ModRootDirectory;
             if (data.MugshotRedirects is not null)
@@ -302,11 +348,15 @@ namespace Focus.Apps.EasyNpc.Configuration
         public string? GameDataDirectory { get; set; }
         public string? GameRelease { get; set; }
         public bool? IncludeChildNpcs { get; set; }
+        public string? Language { get; set; }
         public string? ModRootDirectory { get; set; }
         public IReadOnlyList<MugshotRedirect>? MugshotRedirects { get; set; }
         public string? MugshotsDirectory { get; set; }
+        public string? PluginHeaderVersion { get; set; }
+        public string? PluginsFilePath { get; set; }
         public IReadOnlyList<string>? RaceTransformationKeys { get; set; }
         public string? Theme { get; set; }
+        public bool? UseHardLinks { get; set; }
         public bool? UseModManagerForModDirectory { get; set; }
     }
 }

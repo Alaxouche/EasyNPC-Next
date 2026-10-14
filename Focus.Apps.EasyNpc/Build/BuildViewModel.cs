@@ -1,6 +1,7 @@
 ﻿using Focus.Apps.EasyNpc.Build.Pipeline;
 using Focus.Apps.EasyNpc.Build.Preview;
 using Focus.Apps.EasyNpc.Build.UI;
+using Focus.Apps.EasyNpc.Messages;
 using Focus.Files;
 using Focus.ModManagers;
 using PropertyChanged;
@@ -24,14 +25,17 @@ namespace Focus.Apps.EasyNpc.Build
         public BuildPreviewViewModel Preview { get; private init; }
         public BuildProgressViewModel<BuildReport>? Progress { get; private set; }
 
+        private readonly IMessageBus messageBus;
         private readonly IModRepository modRepository;
         private readonly IBuildPipeline<BuildSettings, BuildReport> pipeline;
         private readonly BuildProgressViewModel<BuildReport>.Factory progressFactory;
 
         public BuildViewModel(
             IModRepository modRepository, IBuildPipeline<BuildSettings, BuildReport> pipeline,
-            BuildPreviewViewModel preview, BuildProgressViewModel<BuildReport>.Factory progressFactory)
+            BuildPreviewViewModel preview, BuildProgressViewModel<BuildReport>.Factory progressFactory,
+            IMessageBus messageBus)
         {
+            this.messageBus = messageBus;
             this.modRepository = modRepository;
             this.pipeline = pipeline;
             this.progressFactory = progressFactory;
@@ -57,6 +61,21 @@ namespace Focus.Apps.EasyNpc.Build
             {
                 if (watchableRepository is not null)
                     watchableRepository.ResumeWatching();
+            }
+        }
+
+        // Opens the NPC on the Profile page, to pick a face that works before building again.
+        public void ShowNpc(SkippedNpc npc)
+        {
+            if (string.IsNullOrEmpty(npc.Key))
+                return;
+            try
+            {
+                messageBus.Send(new JumpToNpc(RecordKey.Parse(npc.Key)));
+            }
+            catch (System.ArgumentException)
+            {
+                // Not a key this version wrote; nothing to jump to.
             }
         }
 

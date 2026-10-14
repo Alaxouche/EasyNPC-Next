@@ -14,6 +14,7 @@ using System.IO.Abstractions;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Focus.Apps.EasyNpc.Reports
@@ -24,7 +25,10 @@ namespace Focus.Apps.EasyNpc.Reports
 
         private ArchiveIndex archiveIndex;
         private bool environmentConfirmed;
-        private readonly ConcurrentDictionary<string, AssetSource?> archiveSources =
+        // Lazy values: GetOrAdd alone runs the factory once per *concurrent caller*, and the factory can byte-compare a
+        // multi-gigabyte BSA against every mod's copy. With thousands of NPCs checked in parallel, that ran the same
+        // comparison dozens of times at once before the first result was cached.
+        private readonly ConcurrentDictionary<string, Lazy<AssetSource?>> archiveSources =
             new(StringComparer.CurrentCultureIgnoreCase);
         private readonly IArchiveProvider archiveProvider;
         // Facegen editor must be lazy because it depends on the created environment.
@@ -240,13 +244,28 @@ namespace Focus.Apps.EasyNpc.Reports
             LoadOrderAnalysis analysis, string mainPluginName, ModComponentInfo? mergeComponent)
         {
             var loadOrder = setup.AvailablePlugins.Select(x => x.FileName);
-            var npcTasks = analysis
+            var chains = analysis
                 .ExtractChains<NpcAnalysis>(RecordType.Npc)
-                .AsParallel()
                 .Where(x => x.Winner.TemplateInfo?.InheritsTraits != true && x.Contains(mainPluginName))
-                .Select(x => CheckNpc(x, mainPluginName, mergeComponent));
-            var npcs = await Task.WhenAll(npcTasks);
-            return npcs.OrderByLoadOrder(x => x, loadOrder);
+                .ToList();
+            // Bounded on purpose. This used to start one task per NPC all at once; every task that has to compare head
+            // parts reads a whole FaceGen (often several MB, decompressed out of a BSA) and parses it, so on a merge of
+            // a few thousand NPCs they were all held in memory together - a report was seen sitting on this step for
+            // hours at 18 GB. A fixed number in flight keeps memory flat and the thread pool free.
+            var results = new NpcConsistencyInfo[chains.Count];
+            var completed = 0;
+            await Parallel.ForEachAsync(
+                Enumerable.Range(0, chains.Count),
+                new ParallelOptions { MaxDegreeOfParallelism = System.Environment.ProcessorCount },
+                async (i, _) =>
+                {
+                    results[i] = await CheckNpc(chains[i], mainPluginName, mergeComponent).ConfigureAwait(false);
+                    var done = Interlocked.Increment(ref completed);
+                    // Show movement; a static label on a long step reads as a hang.
+                    if (done % 100 == 0 || done == chains.Count)
+                        status.OnNext($"Checking NPC consistency ({done:N0} / {chains.Count:N0})");
+                }).ConfigureAwait(false);
+            return results.OrderByLoadOrder(x => x, loadOrder);
         }
 
         private bool FileContentsEqual(IFileInfo info1, IFileInfo info2)
@@ -295,8 +314,10 @@ namespace Focus.Apps.EasyNpc.Reports
                     };
                 var archiveSource = archiveSources.GetOrAdd(
                     containingArchiveName,
-                    _ => FindAssetSource(
-                        containingArchiveName, fs.Path.Combine(settings.DataDirectory, containingArchiveName)));
+                    name => new Lazy<AssetSource?>(
+                        () => FindAssetSource(name, fs.Path.Combine(settings.DataDirectory, name)),
+                        LazyThreadSafetyMode.ExecutionAndPublication))
+                    .Value;
                 if (archiveSource is not null)
                     return new AssetSource
                     {

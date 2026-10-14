@@ -51,6 +51,19 @@ namespace Focus.Providers.Mutagen.Tests.Analysis
             return newKeys.Select(x => x.ToRecordKey()).ToArray();
         }
 
+        // Adds an override of an existing record - same form key, another plugin - which is how a load order patches
+        // a record the base game or an earlier mod defined.
+        public void AddOverride<T>(string pluginName, RecordKey key, Action<T> configure)
+            where T : class, ISkyrimMajorRecordGetter
+        {
+            if (!pluginOrder.Contains(pluginName))
+                pluginOrder.Add(pluginName);
+            var groupGetterType = LoquiRegistration.GetRegister(typeof(T)).GetterType;
+            var record = (T)Activator.CreateInstance(typeof(T), key.ToFormKey(), SkyrimRelease.SkyrimSE);
+            configure(record);
+            GetCache(pluginName, groupGetterType).Put(record);
+        }
+
         public void ConfigureMod(string pluginName, Action<Mock<ISkyrimModGetter>> configure)
         {
             if (!mods.TryGetValue(pluginName, out var modMock))

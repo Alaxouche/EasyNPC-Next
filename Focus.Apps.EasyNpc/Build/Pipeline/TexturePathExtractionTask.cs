@@ -16,6 +16,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
     public class TexturePathExtractionTask : BuildTask<TexturePathExtractionTask.Result>
     {
         private static readonly IReadOnlyList<string> EmptyTexturePaths = ImmutableList<string>.Empty;
+        private static readonly char[] InvalidPathChars = System.IO.Path.GetInvalidPathChars();
 
         public class Result
         {
@@ -23,17 +24,32 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             // face in game. We can't regenerate them (that needs the Creation Kit), but we flag them so the user can
             // pick a different face plugin or fix the source mod.
             public IReadOnlyCollection<string> BrokenFaceGenPaths { get; private init; }
+            // One baked shape of a FaceGen head mesh. The name is the editor ID of the head part the shape was baked
+            // from, and the vertex count is what the morph data of that head part has to match.
+            public record FaceGenShape(string Name, int VertexCount);
+
+            // Shapes found in each copied FaceGen head mesh, by output path. The meshes are parsed here anyway, and
+            // their shapes are what the game matches against the head parts on the NPC's record, so collecting them
+            // costs nothing and lets the build verify that the two actually agree.
+            public IReadOnlyDictionary<string, IReadOnlyList<FaceGenShape>> FaceGenShapes { get; private init; }
             public IReadOnlyCollection<string> FailedSourcePaths { get; private init; }
             public IReadOnlyCollection<string> TexturePaths { get; private init; }
+            // Which copied meshes reference each texture, so a missing texture can be traced to the mod that asks for
+            // it instead of being reported as a bare path.
+            public IReadOnlyDictionary<string, IReadOnlyList<string>> TextureReferences { get; private init; }
 
             public Result(
                 IReadOnlyCollection<string> texturePaths,
                 IReadOnlyCollection<string> failedSourcePaths,
-                IReadOnlyCollection<string> brokenFaceGenPaths)
+                IReadOnlyCollection<string> brokenFaceGenPaths,
+                IReadOnlyDictionary<string, IReadOnlyList<string>>? textureReferences = null,
+                IReadOnlyDictionary<string, IReadOnlyList<FaceGenShape>>? faceGenShapes = null)
             {
                 TexturePaths = texturePaths;
                 FailedSourcePaths = failedSourcePaths;
                 BrokenFaceGenPaths = brokenFaceGenPaths;
+                TextureReferences = textureReferences ?? new Dictionary<string, IReadOnlyList<string>>();
+                FaceGenShapes = faceGenShapes ?? new Dictionary<string, IReadOnlyList<FaceGenShape>>();
             }
         }
 
@@ -82,6 +98,8 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             // (hair, brows...) are copied too but aren't facegen.
             var faceGenMeshes = faceGen.MeshPaths.ToHashSet(PathComparer.Default);
             var brokenFaceGen = new ConcurrentBag<string>();
+            var faceGenShapes =
+                new ConcurrentDictionary<string, IReadOnlyList<Result.FaceGenShape>>(PathComparer.Default);
             var pathsFromMeshes = await meshPaths
                 .ThrottledSelect(
                     async path =>
@@ -91,7 +109,8 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                         using var fileCts =
                             CancellationTokenSource.CreateLinkedTokenSource(CancellationToken);
                         var extractionTask = Task.Run(() => GetReferencedTexturePaths(
-                            absolutePath, path, faceGenMeshes.Contains(path), brokenFaceGen, fileCts.Token));
+                            absolutePath, path, faceGenMeshes.Contains(path), brokenFaceGen, faceGenShapes,
+                            fileCts.Token));
                         if (settings.TextureExtractionTimeoutSec > 0)
                             extractionTask = extractionTask
                                 .WithTimeout(
@@ -106,23 +125,43 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                                     failedSourcePaths.Add(path);
                                     return EmptyTexturePaths;
                                 });
-                        return await extractionTask;
+                        return (Mesh: path, Textures: await extractionTask);
                     },
                     new ParallelOptions { CancellationToken = CancellationToken })
                 .ToListAsync()
                 .ConfigureAwait(false);
+            var textureReferences = pathsFromMeshes
+                .SelectMany(x => x.Textures.Select(t => (Texture: NormalizeTexturePath(t), x.Mesh)))
+                .Where(x => IsPlausibleTexturePath(x.Texture))
+                .GroupBy(x => x.Texture, PathComparer.Default)
+                .ToDictionary(
+                    g => g.Key,
+                    g => (IReadOnlyList<string>)g.Select(x => x.Mesh).Distinct(PathComparer.Default).ToList(),
+                    PathComparer.Default);
             var allTexturePaths = pathsFromMeshes
-                .SelectMany(p => p)
+                .SelectMany(p => p.Textures)
                 .Concat(pathsFromTextureSets)
                 .AsParallel()
                 .Select(NormalizeTexturePath)
+                .Where(IsPlausibleTexturePath)
                 .ToHashSet(PathComparer.Default);
             if (!brokenFaceGen.IsEmpty)
                 log.Warning(
                     "{Count} NPC face mesh(es) look broken (empty, corrupt or no geometry) and will show as invisible " +
                     "faces in game. Pick a different face for these NPCs, or fix the source mod: {Paths}",
                     brokenFaceGen.Count, string.Join(", ", brokenFaceGen.OrderBy(p => p)));
-            return new Result(allTexturePaths, failedSourcePaths.ToImmutableList(), brokenFaceGen.ToImmutableList());
+            return new Result(
+                allTexturePaths, failedSourcePaths.ToImmutableList(), brokenFaceGen.ToImmutableList(),
+                textureReferences, faceGenShapes);
+        }
+
+        // Texture slots in the wild are not always real paths: mods ship meshes whose slots hold a stray "=", a
+        // fragment of some other string, or a folder with no file name at all. The game never loads those, but we
+        // would still try to copy them and then report every one as a missing asset, burying the genuine misses.
+        private static bool IsPlausibleTexturePath(string path)
+        {
+            return path.EndsWith(".dds", StringComparison.OrdinalIgnoreCase) &&
+                path.IndexOfAny(InvalidPathChars) < 0;
         }
 
         private static string? GetPathAfter(string path, string search, int offset)
@@ -135,6 +174,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
         // adjacent strings into bogus paths that showed up as missing assets.
         private async Task<IReadOnlyList<string>> GetReferencedTexturePaths(
             string nifFileName, string relativePath, bool isFaceGen, ConcurrentBag<string> brokenFaceGen,
+            ConcurrentDictionary<string, IReadOnlyList<Result.FaceGenShape>> faceGenShapes,
             CancellationToken cancellationToken)
         {
             if (!fs.File.Exists(nifFileName))
@@ -157,6 +197,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             // Parsed in parallel (throttled to the CPU count by the caller). NiflySharp is safe as long as each NifFile
             // stays on one thread, which it does here.
             var texturePaths = new List<string>();
+            var shapes = new List<Result.FaceGenShape>();
             var shapeCount = 0;
             try
             {
@@ -164,6 +205,14 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                 foreach (var shape in nif.GetShapes())
                 {
                     shapeCount++;
+                    if (isFaceGen)
+                    {
+                        // The shape name is the editor ID of the head part this geometry was baked from, and its
+                        // vertex count is what that head part's morph data has to match.
+                        var shapeName = shape.name.get();
+                        if (!string.IsNullOrEmpty(shapeName))
+                            shapes.Add(new Result.FaceGenShape(shapeName, (int)shape.GetNumVertices()));
+                    }
                     // Slots 0-7: diffuse, normal, glow/subsurface, height, environment, env mask, tint, specular.
                     for (uint slot = 0; slot < 8; slot++)
                     {
@@ -186,6 +235,8 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             // A facegen head mesh with no shapes has no geometry to render -> invisible face.
             if (isFaceGen && shapeCount == 0)
                 brokenFaceGen.Add(relativePath);
+            if (isFaceGen)
+                faceGenShapes[relativePath] = shapes;
             return texturePaths;
         }
 

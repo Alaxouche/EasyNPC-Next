@@ -78,7 +78,8 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             for (var i = 0; i < partitionCount; i++)
             {
                 var fileName = i == 0 ? FileStructure.MergeFileName : $"{baseName} {i + 1}.esp";
-                var split = new SkyrimMod(ModKey.FromNameAndExtension(fileName), patch.Mod.SkyrimRelease);
+                var split = new SkyrimMod(
+                    ModKey.FromNameAndExtension(fileName), patch.Mod.SkyrimRelease, patch.Mod.ModHeader.Stats.Version);
                 foreach (var npc in npcs.Skip(i * settings.MaxNpcsPerPlugin).Take(settings.MaxNpcsPerPlugin))
                     split.Npcs.GetOrAddAsOverride(npc);
                 // Pull every record the partition references out of the full merge into this split, so it stands alone.

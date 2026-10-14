@@ -1,6 +1,7 @@
 ﻿using Focus.Apps.EasyNpc.GameData.Files;
 using Focus.Apps.EasyNpc.Profiles;
 using Focus.ModManagers;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -15,7 +16,7 @@ namespace Focus.Apps.EasyNpc.Build.Checks
             this.modRepository = modRepository;
         }
 
-        public IEnumerable<BuildWarning> Run(INpc npc, BuildSettings _)
+        public IEnumerable<BuildWarning> Run(INpc npc, BuildSettings settings)
         {
             if (!npc.CanCustomizeFace)
                 yield break;
@@ -31,16 +32,34 @@ namespace Focus.Apps.EasyNpc.Build.Checks
             if (npc.FaceOption.IsBaseGame)
                 yield break;
 
-            var defaultHeadParts = npc.DefaultOption.Analysis.MainHeadParts;
-            var faceHeadParts = npc.FaceOption.Analysis.MainHeadParts;
-            var requiresFaceGen = !faceHeadParts.ToHashSet().SetEquals(defaultHeadParts);
+            // A FaceGen is required whenever the head parts we are about to write differ from the ones baked into the
+            // FaceGen the game will actually resolve for this NPC.
+            //
+            // Comparing only against the *default* option missed the most damaging case: when the chosen face is also
+            // the load order winner but ships no FaceGen of its own, nothing gets copied and nothing was flagged - yet
+            // the game still resolves the original (usually vanilla) FaceGen, whose shapes are named after the original
+            // head parts. The overhaul's head part is then not found in it and the head does not render at all. So
+            // compare against the master record too, since that is what the fallback FaceGen was built from.
+            var faceHeadParts = npc.FaceOption.Analysis.MainHeadParts.ToHashSet();
+            var masterHeadParts = npc.Options
+                .FirstOrDefault(x => string.Equals(
+                    x.PluginName, npc.BasePluginName, StringComparison.CurrentCultureIgnoreCase))
+                ?.Analysis.MainHeadParts;
+            var requiresFaceGen =
+                !faceHeadParts.SetEquals(npc.DefaultOption.Analysis.MainHeadParts) ||
+                (masterHeadParts is not null && !faceHeadParts.SetEquals(masterHeadParts));
             if (!requiresFaceGen)
                 yield break;
+            // When the chosen face inherits its traits, the appearance - head parts and FaceGen alike - belongs to
+            // the template, and the overhaul ships no FaceGen under this NPC's own name on purpose. The build copies
+            // the template's FaceGen for it, so that is the one to look for; checking this NPC's own name reported
+            // every such NPC as missing a FaceGen it was never supposed to have.
+            var faceSource = settings.Profile.TryResolveTemplate(npc, out var template) ? template : npc;
             var pluginComponents = modRepository
-                .SearchForFiles(npc.FaceOption.PluginName, false)
+                .SearchForFiles(faceSource.FaceOption.PluginName, false)
                 .Select(x => x.ModComponent)
                 .Distinct();
-            var faceGenPath = FileStructure.GetFaceMeshFileName(npc);
+            var faceGenPath = FileStructure.GetFaceMeshFileName(faceSource);
             var faceGenComponents = pluginComponents
                 .Where(c => modRepository.ContainsFile(new[] { c }, faceGenPath, true))
                 .ToList();

@@ -1,4 +1,5 @@
-﻿using Focus.Providers.Mutagen;
+﻿using Focus.Apps.EasyNpc.Build;
+using Focus.Providers.Mutagen;
 using Mutagen.Bethesda.Plugins;
 using Mutagen.Bethesda.Skyrim;
 using System.IO;
@@ -16,16 +17,20 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
     public class DummyPluginBuilder : IDummyPluginBuilder
     {
         private readonly GameSelection game;
+        private readonly IPluginHeaderVersionProvider headerVersionProvider;
 
-        public DummyPluginBuilder(GameSelection game)
+        public DummyPluginBuilder(GameSelection game, IPluginHeaderVersionProvider headerVersionProvider)
         {
             this.game = game;
+            this.headerVersionProvider = headerVersionProvider;
         }
 
         public void CreateDummyPlugin(string path)
         {
             var modKey = ModKey.FromNameAndExtension(Path.GetFileName(path));
-            var dummyMod = new SkyrimMod(modKey, game.GameRelease.ToSkyrimRelease());
+            // These are ESL-flagged, and a 1.71 ESL is exactly what crashes an older game version.
+            var dummyMod = new SkyrimMod(
+                modKey, game.GameRelease.ToSkyrimRelease(), headerVersionProvider.HeaderVersion);
             dummyMod.ModHeader.Flags |= SkyrimModHeader.HeaderFlag.Small;
             dummyMod.BeginWrite.ToPath(path).WithNoLoadOrder().Write();
         }

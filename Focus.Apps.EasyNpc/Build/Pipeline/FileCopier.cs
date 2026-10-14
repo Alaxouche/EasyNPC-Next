@@ -1,4 +1,6 @@
-﻿using Focus.Files;
+﻿using Focus.Apps.EasyNpc.Configuration;
+using Focus.Files;
+using Serilog;
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -22,11 +24,15 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
         // Scales with the CPU (BSA reads decompress); capped to avoid thrashing on an HDD.
         private static readonly int MaxDegreeOfParallelism = Math.Clamp(System.Environment.ProcessorCount / 2, 4, 8);
 
+        private readonly IAppSettings appSettings;
         private readonly IFileProvider fileProvider;
+        private readonly ILogger log;
 
-        public FileCopier(IFileProvider fileProvider)
+        public FileCopier(IFileProvider fileProvider, IAppSettings appSettings, ILogger log)
         {
+            this.appSettings = appSettings;
             this.fileProvider = fileProvider;
+            this.log = log;
         }
 
         public void CopyAll(
@@ -39,8 +45,22 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 beforeCopy(path);
-                var outputPath = Path.Combine(outputDirectory, path);
-                if (!CopyOne(physicalSource, path, outputPath))
+                var outputPath = path;
+                bool copied;
+                try
+                {
+                    outputPath = Path.Combine(outputDirectory, path);
+                    copied = CopyOne(physicalSource, path, outputPath);
+                }
+                catch (Exception ex) when (ex is not OperationCanceledException)
+                {
+                    // A malformed path in one mod's mesh (a typo, a stray character, an archive entry that can't be
+                    // read) used to throw out of this loop and fail the whole build at "Copy Textures". It is one
+                    // missing file: report it with the others and carry on.
+                    log.Warning(ex, "Could not copy {path}; it will be listed as a missing asset.", path);
+                    copied = false;
+                }
+                if (!copied)
                     lock (mutableFailedPaths)
                         mutableFailedPaths.Add(outputPath);
             });
@@ -59,7 +79,10 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                     var directory = Path.GetDirectoryName(outputPath);
                     if (!string.IsNullOrEmpty(directory))
                         Directory.CreateDirectory(directory);
-                    LinkOrCopy(sourcePath, outputPath);
+                    if (appSettings.UseHardLinks)
+                        LinkOrCopy(sourcePath, outputPath);
+                    else
+                        File.Copy(sourcePath, outputPath, overwrite: true);
                     return true;
                 }
                 catch (IOException)

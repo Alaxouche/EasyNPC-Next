@@ -74,7 +74,7 @@ namespace Focus.Apps.EasyNpc.Build.Pipeline
                             "Failed to import default record for {npcLabel} from {pluginName}. This NPC will be " +
                             "excluded from the merge.",
                             npc.DescriptiveLabel, npc.DefaultOption.PluginName);
-                        skipped.Add(new(npc.DescriptiveLabel, npc.DefaultOption.PluginName, ex.Message));
+                        skipped.Add(new(npc, npc.DescriptiveLabel, npc.DefaultOption.PluginName, ex.Message));
                     }
                 }
                 return new Result(npcs, skipped);

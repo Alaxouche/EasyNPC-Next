@@ -61,6 +61,26 @@ namespace Focus.Providers.Mutagen
                 .ToList()
                 .AsReadOnly();
             LoadOrderGraph = new LoadOrderGraph(AvailablePlugins, blacklistedPluginNames);
+            LogLoadOrderSummary();
+        }
+
+        private void LogLoadOrderSummary()
+        {
+            var sources = setupStatics.GetLoadOrderSources(game.GameRelease, DataDirectory);
+            var enabled = AvailablePlugins.Where(x => x.IsEnabled).ToList();
+            var enabledMods = enabled.Count(x => !x.IsImplicit);
+            log.Information(
+                "Load order read from plugins file {pluginsFile} (exists: {pluginsFileExists}) and Creation Club " +
+                "list {cccFile}: {pluginCount} plugins, {enabledCount} enabled ({modCount} beyond the base game)",
+                sources?.PluginsFilePath ?? "<none>",
+                sources?.PluginsFilePath is string p && fs.File.Exists(p),
+                sources?.CreationClubFilePath ?? "<none>",
+                AvailablePlugins.Count, enabled.Count, enabledMods);
+            if (enabledMods == 0)
+                log.Warning(
+                    "No plugins beyond the base game are enabled, so no NPC overhaul will be visible. The plugins file " +
+                    "above was probably the wrong one: start EasyNPC from your mod manager (so it sees the profile's " +
+                    "load order), or on Linux/Proton make sure it runs in the same prefix as the game.");
         }
 
         private async Task<(bool, IEnumerable<string>)> TryGetMasterNames(string dataDirectory, string pluginFileName)

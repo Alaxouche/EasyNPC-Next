@@ -1,6 +1,7 @@
 ﻿<UserControl x:Class="Focus.Apps.EasyNpc.Profiles.NpcFilters"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:loc="clr-namespace:Focus.Apps.EasyNpc.Localization"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:fa5="http://schemas.fontawesome.com/icons/"
@@ -53,6 +54,10 @@
                                           HorizontalAlignment="Stretch"
                                           IsChecked="{Binding Missing}"
                                           ToolTip="Only show NPCs pointing to mods that can no longer be found, or plugins no longer in the load order. For best results with this, turn off the 'Modded' filter."/>
+                    <CheckBox Content="{loc:Tr Filters.Excluded}"
+                                          HorizontalAlignment="Stretch"
+                                          IsChecked="{Binding Excluded}"
+                                          ToolTip="Only show NPCs you excluded from the merge (Batch menu)."/>
                     <CheckBox Content="Wigs"
                                           HorizontalAlignment="Stretch"
                                           IsChecked="{Binding Wigs}"

@@ -8,6 +8,7 @@
          xmlns:app="clr-namespace:Focus.Apps.EasyNpc"
          xmlns:main="clr-namespace:Focus.Apps.EasyNpc.Main"
          xmlns:profile="clr-namespace:Focus.Apps.EasyNpc.Profiles"
+             xmlns:loc="clr-namespace:Focus.Apps.EasyNpc.Localization"
          xmlns:ui="http://schemas.modernwpf.com/2019"
          KeepAlive="True"
          mc:Ignorable="d" 
@@ -115,17 +116,17 @@
             <Grid>
                 <profile:NpcFilters DataContext="{Binding Filters}"/>
                 <ui:SimpleStackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-                    <ui:DropDownButton x:Name="BatchButton" ToolTip="Apply an action to every NPC in the current filter">
+                    <ui:DropDownButton x:Name="BatchButton" ToolTip="{loc:Tr Batch.Tooltip}">
                         <ui:DropDownButton.Content>
                             <ui:SimpleStackPanel Orientation="Horizontal">
                                 <fa5:SvgAwesome Icon="Solid_LayerGroup" Width="17" Height="17" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock Text="Batch" VerticalAlignment="Center"/>
+                                <TextBlock Text="{loc:Tr Batch.Button}" VerticalAlignment="Center"/>
                             </ui:SimpleStackPanel>
                         </ui:DropDownButton.Content>
                         <ui:DropDownButton.Flyout>
                             <ui:MenuFlyout Placement="Bottom">
                                 <MenuItem x:Name="BatchAutoAssignMenuItem"
-                                          Header="Auto-assign recommended faces to all filtered NPCs"
+                                          Header="{loc:Tr Batch.AutoAssign}"
                                           Click="BatchAutoAssign_Click"/>
                                 <Separator/>
                                 <MenuItem x:Name="BatchApplyFaceMenuItem"
@@ -146,8 +147,16 @@
                                         </TextBlock>
                                     </MenuItem.Header>
                                 </MenuItem>
+                                <Separator/>
+                                <MenuItem x:Name="BatchExcludeMenuItem"
+                                          Header="{loc:Tr Batch.Exclude}"
+                                          Click="BatchExclude_Click"/>
+                                <MenuItem x:Name="BatchIncludeMenuItem"
+                                          Header="{loc:Tr Batch.Include}"
+                                          Click="BatchInclude_Click"/>
+                                <Separator/>
                                 <MenuItem x:Name="BatchResetVanillaMenuItem"
-                                          Header="Reset all filtered NPCs to vanilla"
+                                          Header="{loc:Tr Batch.ResetVanilla}"
                                           Click="BatchResetVanilla_Click"/>
                             </ui:MenuFlyout>
                         </ui:DropDownButton.Flyout>

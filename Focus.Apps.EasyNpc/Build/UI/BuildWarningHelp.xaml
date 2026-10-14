@@ -94,13 +94,62 @@
                 </TextBlock>
                 <TextBlock Style="{StaticResource HelpTextParagraph}">
                     <Run FontWeight="Medium">Why this matters:</Run>
-                    <Run>If you continue with this selection, this NPC will very likely have blackface or possibly crash the game when nearby.</Run>
+                    <Run>The game looks up this NPC's head parts inside the FaceGen it loads. Without a matching FaceGen the head renders dark, broken or not at all.</Run>
+                    <Run>When there is no FaceGen to be had, the build leaves the NPC out of the merge and lists it afterwards, so it keeps its normal load order look instead.</Run>
                 </TextBlock>
                 <TextBlock Style="{StaticResource HelpTextParagraph}">
                     <Run FontWeight="Medium">How to fix it:</Run>
                     <Run>Check to make sure the mod is installed correctly and/or try reinstalling it.</Run>
                     <Run>If the data is still missing,</Run> <Run FontStyle="Italic">politely</Run> <Run>contact the mod author to request the missing facegens.</Run>
                     <Run>Otherwise, use a different mod/plugin for that NPC.</Run>
+                </TextBlock>
+            </ui:SimpleStackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="PreviousMergeEnabled">
+            <ui:SimpleStackPanel>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">What this means:</Run>
+                    <Run>Another mod holding an earlier EasyNPC merge is still enabled, and you are building into a different mod.</Run>
+                </TextBlock>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">Why this matters:</Run>
+                    <Run>The old merge keeps its FaceGen as loose files, and a loose file beats one inside a BSA whatever the mod order. The old faces win: Verify reports FaceGen conflicts and some NPCs look wrong.</Run>
+                </TextBlock>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">How to fix it:</Run>
+                    <Run>Disable the old merge mod before playing (or delete it once the new one works), or build into the same mod to replace it.</Run>
+                </TextBlock>
+            </ui:SimpleStackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="SkyPatcherAppearance">
+            <ui:SimpleStackPanel>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">What this means:</Run>
+                    <Run>A SkyPatcher INI changes what NPCs look like while the game runs (copyVisualStyle, setRandomVisualStyle, race, skin or the traits template flag).</Run>
+                </TextBlock>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">Why this matters:</Run>
+                    <Run>SkyPatcher applies after every plugin has loaded, so it overrides the merge for the NPCs it targets. A face it changes no longer matches the FaceGen the merge built, which is how dark or broken faces appear.</Run>
+                </TextBlock>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">How to fix it:</Run>
+                    <Run>Keep one of the two for those NPCs: disable the SkyPatcher replacer, or exclude those NPCs from the merge (Batch menu on the Profile page).</Run>
+                </TextBlock>
+            </ui:SimpleStackPanel>
+        </DataTemplate>
+        <DataTemplate x:Key="MissingHeadPartMesh">
+            <ui:SimpleStackPanel>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">What this means:</Run>
+                    <Run>The face chosen for this NPC uses head parts (hair, brows, beard...) whose meshes aren't installed in any mod.</Run>
+                </TextBlock>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">Why this matters:</Run>
+                    <Run>Missing hair is the usual cause of bald NPCs after a merge. Many overhauls need a separate hair or resource mod that is easy to miss or disable.</Run>
+                </TextBlock>
+                <TextBlock Style="{StaticResource HelpTextParagraph}">
+                    <Run FontWeight="Medium">How to fix it:</Run>
+                    <Run>Install and enable the resource mod the overhaul lists as a requirement, or pick a different face for this NPC.</Run>
                 </TextBlock>
             </ui:SimpleStackPanel>
         </DataTemplate>
@@ -241,6 +290,15 @@
                         </DataTrigger>
                         <DataTrigger Binding="{Binding Id}" Value="WigNotMatched">
                             <Setter Property="ContentControl.ContentTemplate" Value="{StaticResource WigNotMatched}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Id}" Value="PreviousMergeEnabled">
+                            <Setter Property="ContentControl.ContentTemplate" Value="{StaticResource PreviousMergeEnabled}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Id}" Value="SkyPatcherAppearance">
+                            <Setter Property="ContentControl.ContentTemplate" Value="{StaticResource SkyPatcherAppearance}"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding Id}" Value="MissingHeadPartMesh">
+                            <Setter Property="ContentControl.ContentTemplate" Value="{StaticResource MissingHeadPartMesh}"/>
                         </DataTrigger>
                     </Style.Triggers>
                 </Style>

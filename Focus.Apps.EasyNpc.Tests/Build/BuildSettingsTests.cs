@@ -77,6 +77,28 @@ namespace Focus.Apps.EasyNpc.Tests.Build
             Assert.Equal(1, settings.IncludedNpcCount);
         }
 
+        [Fact]
+        public void ExcludedNpcs_AreLeftOutWhateverTheInclusionMode()
+        {
+            var npcs = new[]
+            {
+                Npc("001", isCustomized: true, isTemplated: false),
+                Npc("002", isCustomized: true, isTemplated: true),
+            };
+            var excluded = new HashSet<IRecordKey>(RecordKeyComparer.Default) { new RecordKey("Skyrim.esm", "002") };
+
+            foreach (var inclusion in new[] { NpcInclusion.All, NpcInclusion.CustomizedOnly })
+            {
+                var settings = new BuildSettings(new Profile(npcs), @"C:\out", "out")
+                {
+                    NpcInclusion = inclusion,
+                    ExcludedNpcs = excluded,
+                };
+                Assert.Equal(new[] { "001" }, settings.IncludedNpcs.Select(x => x.LocalFormIdHex));
+                Assert.Equal(1, settings.IncludedNpcCount);
+            }
+        }
+
         private static BuildSettings SettingsFor(NpcInclusion inclusion, params INpc[] npcs)
         {
             return new BuildSettings(new Profile(npcs), @"C:\out", "out") { NpcInclusion = inclusion };

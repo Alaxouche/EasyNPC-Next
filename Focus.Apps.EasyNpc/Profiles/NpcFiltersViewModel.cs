@@ -11,6 +11,8 @@ namespace Focus.Apps.EasyNpc.Profiles
         public string? AvailablePlugin { get; set; }
         public IReadOnlyList<string> AvailablePlugins { get; set; } = new List<string>().AsReadOnly();
         public bool Conflicts { get; set; }
+        // Only NPCs the user excluded from the merge.
+        public bool Excluded { get; set; }
         public bool HasForcedFilter { get; set; }
         public bool Missing { get; set; }
         public bool MultipleChoices { get; set; }
@@ -23,9 +25,9 @@ namespace Focus.Apps.EasyNpc.Profiles
         [DependsOn(
             nameof(Conflicts), nameof(SelectedDefaultPlugin), nameof(SelectedFacePlugin),
             nameof(AvailablePlugin), nameof(AvailablePlugin), nameof(Missing),
-            nameof(MultipleChoices), nameof(NonDlc), nameof(Sex), nameof(Wigs))]
+            nameof(MultipleChoices), nameof(NonDlc), nameof(Sex), nameof(Wigs), nameof(Excluded))]
         public bool IsNonDefault =>
-            !NonDlc || Conflicts || Missing || Wigs ||
+            !NonDlc || Conflicts || Missing || Wigs || Excluded ||
             Sex != NpcSexFilter.None ||
             !string.IsNullOrEmpty(SelectedDefaultPlugin) ||
             !string.IsNullOrEmpty(SelectedFacePlugin);
@@ -38,6 +40,7 @@ namespace Focus.Apps.EasyNpc.Profiles
         public void ResetToDefault()
         {
             Conflicts = false;
+            Excluded = false;
             AvailablePlugin = null;
             SelectedDefaultPlugin = null;
             SelectedFacePlugin = null;

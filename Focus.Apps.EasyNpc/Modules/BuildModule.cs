@@ -16,6 +16,7 @@ namespace Focus.Apps.EasyNpc.Modules
         {
             builder.RegisterType<GameFileProvider>().As<IFileProvider>().SingleInstance();
             builder.RegisterType<NiflyFaceGenEditor>().As<IFaceGenEditor>().SingleInstance();
+            builder.RegisterType<PluginHeaderVersionProvider>().As<IPluginHeaderVersionProvider>().SingleInstance();
             builder.RegisterType<SimpleWigResolver>()
                 .As<IWigResolver>()
                 .As<ILoadOrderAnalysisReceiver>()
@@ -24,9 +25,15 @@ namespace Focus.Apps.EasyNpc.Modules
             builder.RegisterType<BadArchives>().As<IGlobalBuildCheck>();
             builder.RegisterType<FaceGenConsistency>().As<INpcBuildCheck>();
             builder.RegisterType<MissingPlugins>().As<INpcBuildCheck>();
+            builder.RegisterType<MissingHeadPartMeshes>()
+                .As<INpcBuildCheck>()
+                .As<ILoadOrderAnalysisReceiver>()
+                .SingleInstance();
             builder.RegisterType<ModSettings>().As<IGlobalBuildCheck>();
             builder.RegisterType<OrphanedNpcs>().As<IGlobalBuildCheck>();
             builder.RegisterType<OverriddenArchives>().As<IGlobalBuildCheck>();
+            builder.RegisterType<PreviousMerges>().As<IGlobalBuildCheck>();
+            builder.RegisterType<SkyPatcherAppearance>().As<IGlobalBuildCheck>();
             builder.RegisterType<WigConversions>().As<INpcBuildCheck>();
             builder.RegisterType<BuildTaskViewModel>();
             builder.RegisterType<BuildProgressViewModel<BuildReport>>();

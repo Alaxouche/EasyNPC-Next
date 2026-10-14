@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Focus.Storage.Archives
 {
@@ -68,13 +70,16 @@ namespace Focus.Storage.Archives
 
         public IReadOnlyList<string> GetFileNames()
         {
-            var fileNames = new List<string>();
+            // libbsarch calls the iteration callback from several worker threads at once, so the accumulator has to be
+            // thread-safe. Adding to a plain List<T> from those threads silently lost entries, left nulls in the list
+            // and occasionally threw - a listing that was short by a random handful of files on every run.
+            var fileNames = new ConcurrentBag<string>();
             Functions.BsaIterateFiles(handle, (archive, filePath, fileRecord, folderRecord, context) =>
             {
                 fileNames.Add(filePath);
                 return false;
             }, IntPtr.Zero);
-            return fileNames.AsReadOnly();
+            return fileNames.ToList().AsReadOnly();
         }
 
         internal void LoadFromFile(string fileName)

@@ -22,6 +22,8 @@ namespace Focus.Apps.EasyNpc.Modules
         public IReadOnlySet<string> BlacklistedPluginNames { get; set; } = new HashSet<string>();
         public string? DataDirectory { get; set; }
         public string GameId { get; set; } = string.Empty;
+        // Explicit plugins.txt to read instead of the game's own (null = default location).
+        public string? PluginsFilePath { get; set; }
 
         protected override void Load(ContainerBuilder builder)
         {
@@ -33,7 +35,7 @@ namespace Focus.Apps.EasyNpc.Modules
                 .AsSelf()
                 .As<GameSelection>();
             builder.RegisterType<ArchiveStatics>().As<IArchiveStatics>().SingleInstance();
-            builder.RegisterType<SetupStatics>().As<ISetupStatics>().SingleInstance();
+            builder.Register(_ => new SetupStatics(PluginsFilePath)).As<ISetupStatics>().SingleInstance();
             builder.RegisterType<MutagenArchiveProvider>().As<IArchiveProvider>().SingleInstance();
             builder.RegisterDecorator<CachingArchiveProvider, IArchiveProvider>();
             builder.RegisterType<GameSetup>()

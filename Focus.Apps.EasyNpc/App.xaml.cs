@@ -3,6 +3,7 @@ using Autofac.Core;
 using CommandLine;
 using CommandLine.Text;
 using Focus.Apps.EasyNpc.Configuration;
+using Focus.Apps.EasyNpc.Localization;
 using Focus.Apps.EasyNpc.Main;
 using Focus.Apps.EasyNpc.Reports;
 using Focus.ModManagers;
@@ -25,6 +26,8 @@ namespace Focus.Apps.EasyNpc
 
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            // Before any window or warning is created, so every text is read in the chosen language.
+            Loc.Apply(Settings.Default.Language);
             Console.WriteLine("Application started");
             Parser.Default.ParseArguments<CommandLineOptions>(e.Args)
                 .WithParsed(Start)
@@ -50,6 +53,21 @@ namespace Focus.Apps.EasyNpc
                 startupInfo.Launcher == ModManager.Vortex || startupInfo.ModDirectoryOwner == ModManager.Vortex;
             if (isVortex && string.IsNullOrEmpty(options.VortexManifest) &&
                 !Warn(StartupWarnings.MissingVortexManifest))
+            {
+                return;
+            }
+
+            if (startupInfo.IsInstalledAsMod &&
+                !Warn(StartupWarnings.InstalledAsMod(AppContext.BaseDirectory)))
+            {
+                return;
+            }
+            // Mod Organizer's mods are only visible through its virtual file system, i.e. when it starts the app. Started
+            // any other way, EasyNPC reads the bare game folder and sees vanilla only - the classic "no faces for my mods".
+            if (startupInfo.ModDirectoryOwner == ModManager.ModOrganizer &&
+                startupInfo.Launcher is ModManager.None or ModManager.Unknown &&
+                string.IsNullOrEmpty(options.ModOrganizerExecutablePath) &&
+                !Warn(StartupWarnings.LaunchedOutsideModOrganizer))
             {
                 return;
             }

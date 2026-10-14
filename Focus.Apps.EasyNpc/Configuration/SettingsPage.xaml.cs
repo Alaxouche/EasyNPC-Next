@@ -60,6 +60,11 @@ namespace Focus.Apps.EasyNpc.Configuration
             Model.SelectGameDataDirectory(Window.GetWindow(this));
         }
 
+        private void PluginsFileSelectButton_Click(object sender, RoutedEventArgs e)
+        {
+            Model.SelectPluginsFile(Window.GetWindow(this));
+        }
+
         private void ModRootDirSelectButton_Click(object sender, RoutedEventArgs e)
         {
             Model.SelectModRootDirectory(Window.GetWindow(this));

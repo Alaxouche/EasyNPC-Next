@@ -23,6 +23,9 @@ namespace Focus.Apps.EasyNpc.Build
     {
         public bool EnableArchiving { get; init; } = true;
         public bool EnableDewiggify { get; init; }
+        // NPCs the user excluded from the merge (Profile page, Batch menu). Applied on top of NpcInclusion.
+        public IReadOnlySet<IRecordKey> ExcludedNpcs { get; init; } =
+            new HashSet<IRecordKey>(RecordKeyComparer.Default);
         // Writes a SPID "..._DISTR.ini" tagging modded-face NPCs with RSVIgnore. Off by default.
         public bool GenerateRsvExclusions { get; init; } = false;
         // When archiving, leave FaceGen (facegeom/facetint) as loose files instead of packing it into the BSA.
@@ -45,13 +48,14 @@ namespace Focus.Apps.EasyNpc.Build
         /// <see cref="Profile"/> directly, otherwise a reduced build would still copy FaceGen (or write an RSV
         /// exclusion) for NPCs that never made it into the plugin.
         /// </summary>
-        public IEnumerable<INpc> IncludedNpcs => NpcInclusion switch
+        public IEnumerable<INpc> IncludedNpcs => (NpcInclusion switch
         {
             NpcInclusion.CustomizedOnly => Profile.Npcs.Where(x => x.IsCustomized || x.IsTemplated),
             _ => Profile.Npcs,
-        };
+        }).Where(x => ExcludedNpcs.Count == 0 || !ExcludedNpcs.Contains(x));
 
-        public int IncludedNpcCount => NpcInclusion == NpcInclusion.All ? Profile.Count : IncludedNpcs.Count();
+        public int IncludedNpcCount =>
+            NpcInclusion == NpcInclusion.All && ExcludedNpcs.Count == 0 ? Profile.Count : IncludedNpcs.Count();
         // 0 disables the per-file timeout during texture path extraction.
         public int TextureExtractionTimeoutSec { get; init; } = 0;
 

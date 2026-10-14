@@ -1,10 +1,11 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Windows;
 using Autofac;
 using CommandLine;
 using Focus.Apps.EasyNpc;
 using Focus.Apps.EasyNpc.Configuration;
+using Focus.Apps.EasyNpc.Localization;
 using Focus.Apps.EasyNpc.Main;
 using Focus.Apps.EasyNpc.Reports;
 using Serilog;
@@ -15,6 +16,7 @@ namespace Focus.Apps.EasyNpc.Verify
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            Loc.Apply(Settings.Default.Language);
             Parser.Default.ParseArguments<CommandLineOptions>(e.Args)
                 .WithParsed(Start)
                 .WithNotParsed(_ => Fail("The command line arguments could not be parsed."));

@@ -1,3 +1,4 @@
+﻿using Focus.Apps.EasyNpc.Localization;
 using PropertyChanged;
 using System;
 using System.Collections.Generic;
@@ -25,6 +26,18 @@ namespace Focus.Apps.EasyNpc.Main
             Description = new InvalidCommandLineContent { ErrorMessages = errorMessages },
         };
 
+        public static StartupWarning InstalledAsMod(string executablePath) => new()
+        {
+            Title = Loc.Get("Startup.InstalledAsMod"),
+            Description = new InstalledAsModContent { ExecutablePath = executablePath },
+        };
+
+        public static StartupWarning LaunchedOutsideModOrganizer => new()
+        {
+            Title = Loc.Get("Startup.OutsideModOrganizer"),
+            Description = new LaunchedOutsideModOrganizerContent(),
+        };
+
         public static StartupWarning MissingGameData(string gameId, string gameName) => new()
         {
             Title = "Game not found",
@@ -36,6 +49,15 @@ namespace Focus.Apps.EasyNpc.Main
             Title = "Game not supported",
             Description = new UnsupportedGameContent(gameId, gameName),
         };
+    }
+
+    public class InstalledAsModContent
+    {
+        public string ExecutablePath { get; init; } = string.Empty;
+    }
+
+    public class LaunchedOutsideModOrganizerContent
+    {
     }
 
     public class InvalidCommandLineContent
@@ -53,7 +75,7 @@ namespace Focus.Apps.EasyNpc.Main
     {
         public string GameId { get; init; } = "SkyrimSE";
         public string GameName { get; init; }  = "Skyrim Special Edition";
-        public string IssuesUrl { get; private init; } = "https://github.com/focustense/easymod/labels/gamefinder";
+        public string IssuesUrl { get; private init; } = "https://github.com/Alaxouche/EasyNPC-Next/issues";
         public string SupportedDistributionsUrl { get; private init; } = "https://github.com/erri120/GameFinder#gamefinder";
 
         // Set once the user picks a folder, so the dialog can confirm what was saved instead of leaving them guessing.

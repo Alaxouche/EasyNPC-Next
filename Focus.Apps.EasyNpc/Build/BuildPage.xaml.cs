@@ -22,6 +22,12 @@ namespace Focus.Apps.EasyNpc.Build
             Model.OpenBuildOutput();
         }
 
+        private void ShowSkippedNpc_Click(object sender, RoutedEventArgs e)
+        {
+            if ((sender as FrameworkElement)?.Tag is SkippedNpc npc)
+                Model.ShowNpc(npc);
+        }
+
         private void LogLink_Click(object sender, RoutedEventArgs e)
         {
             if (!File.Exists(ProgramData.LogFileName))
